@@ -43,8 +43,12 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
   }
 
   return (
-    <Link href={href} className="block group h-full relative" onClick={() => setShowMenu(false)}>
-      <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all p-6 h-full flex flex-col justify-between relative">
+    <Link
+      href={href}
+      className="block group h-full relative"
+      onClick={() => setShowMenu(false)}
+    >
+      <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all p-5 sm:p-6 h-full flex flex-col justify-between relative">
         
         {isAdmin && onDelete && (
             <div className="absolute top-4 right-4 z-20">
@@ -80,7 +84,11 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
 
         <div>
             {/* Icon/Thumbnail Header */}
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-6 overflow-hidden relative ${!course.thumbnail ? iconColorClass : 'bg-gray-100'}`}>
+            <div
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-4 sm:mb-6 overflow-hidden relative ${
+                !course.thumbnail ? iconColorClass : 'bg-gray-100'
+              }`}
+            >
                 {course.thumbnail ? (
                   <Image
                     src={course.thumbnail}
@@ -95,10 +103,10 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
                 )}
             </div>
             
-            <h3 className="font-bold text-lg text-gray-900 mb-3 group-hover:text-gray-700 transition-colors line-clamp-2">
+            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3 group-hover:text-gray-700 transition-colors line-clamp-2">
                 {course.title}
             </h3>
-            <p className="text-gray-500 text-sm mb-6 line-clamp-3 leading-relaxed">
+            <p className="text-gray-500 text-sm mb-4 sm:mb-6 line-clamp-3 leading-relaxed">
                 {course.description}
             </p>
         </div>

@@ -494,43 +494,76 @@ export default function CreateCoursePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col overflow-hidden">
         {/* Top Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
               className="text-gray-600 hover:text-gray-900"
             >
               ←
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">Create Course</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Create Course
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               onClick={handleSaveDraft}
               variant="outline"
               disabled={loading}
-              className="border-gray-300 cursor-pointer rounded-[100px]"
+              className="border-gray-300 cursor-pointer rounded-[999px] w-full sm:w-auto"
             >
               Save as Draft
             </Button>
             <Button
               onClick={handlePublish}
               disabled={loading}
-              className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer rounded-[100px] px-5 py-3 text-white"
+              className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer rounded-[999px] px-4 sm:px-5 py-2.5 sm:py-3 text-white w-full sm:w-auto"
             >
-              Publish Course
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                "Publish Course"
+              )}
             </Button>
           </div>
         </div>
 
         {/* Content with Tabs */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Tab Sidebar */}
-          <div className="w-64 bg-white border-r border-gray-200 p-4">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Mobile Tabs */}
+          <div className="md:hidden bg-white border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab("information")}
+              className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
+                activeTab === "information"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              Course Information
+            </button>
+            <button
+              onClick={() => setActiveTab("curriculum")}
+              className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
+                activeTab === "curriculum"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              Curriculum Builder
+            </button>
+          </div>
+
+          {/* Tab Sidebar (Desktop) */}
+          <div className="hidden md:block w-64 bg-white border-r border-gray-200 p-4">
             <button
               onClick={() => setActiveTab("information")}
               className={`w-full text-left px-5 py-3 rounded-xl mb-4 transition-all ${
@@ -554,7 +587,7 @@ export default function CreateCoursePage() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
             {activeTab === "information" ? (
               <CourseInformationTab
                 courseData={courseData}
@@ -903,8 +936,8 @@ function CurriculumBuilderTab({
           <div
             className={
               isExpanded
-                ? "fixed inset-0 z-50 bg-white p-8 flex flex-col"
-                : "relative h-[600px] flex flex-col"
+                ? "fixed inset-0 z-50 bg-white p-4 sm:p-8 flex flex-col"
+                : "relative h-[420px] sm:h-[520px] md:h-[600px] flex flex-col"
             }
           >
             <div className="flex items-center justify-between mb-4">

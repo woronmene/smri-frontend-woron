@@ -4,11 +4,11 @@ import { useContext, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
-const Sidebar = () => {
+const Sidebar = ({ className, onNavigate }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useContext(AuthContext);
@@ -17,6 +17,7 @@ const Sidebar = () => {
 
   const isTeacher = user?.role === 'teacher' || user?.email?.includes('teacher');
   const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
+  const handleNavigate = onNavigate || (() => {});
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -66,7 +67,12 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col font-sans">
+    <aside
+      className={cn(
+        'bg-white border-gray-200 min-h-screen flex flex-col font-sans w-64',
+        className
+      )}
+    >
       {/* Logo Section */}
       <div className="p-6">
         <div className="flex items-center gap-2">
@@ -155,6 +161,7 @@ const Sidebar = () => {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={handleNavigate}
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group border',
                   isActive

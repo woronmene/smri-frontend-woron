@@ -88,37 +88,21 @@ export default function DashboardPage() {
     ];
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500">Error loading courses. Please try again.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header - matches design screenshot */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Learning Overview</h1>
-          <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 bg-white w-fit px-3 py-3 rounded-full border border-gray-200">
+      <div className="flex flex-col gap-4 sm:gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Learning Overview</h1>
+          <div className="inline-flex items-center gap-2 mt-1 text-xs sm:text-sm text-gray-600 bg-white px-3 py-2 sm:py-3 rounded-full border border-gray-200 shadow-sm">
             <GraduationCap size={16} />
             <span className="font-medium">Active Courses ({filteredCourses?.length || 0})</span>
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             {/* Tabs - Segmented Control Style */}
-            <div className="inline-flex p-1 bg-gray-100 rounded-lg border border-gray-200">
+            <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 rounded-lg border border-gray-200 overflow-x-auto max-w-full">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
@@ -136,45 +120,65 @@ export default function DashboardPage() {
 
             {/* Create Course Button - Only visible for admins */}
             {isAdmin && (
-            <Button
+              <Button
                 onClick={() => router.push('/dashboard/courses/create')}
-                className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20"
-            >
+                className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center justify-center gap-2 rounded-[999px] px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm shadow-cyan-500/20 w-full sm:w-auto"
+              >
                 <Plus size={18} />
-                Create Course
-            </Button>
+                <span className="whitespace-nowrap">Create Course</span>
+              </Button>
             )}
         </div>
       </div>
 
       {/* Courses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredCourses?.map((course) => {
-           const isStudent = !isAdmin && !isTeacher;
-           return <CourseCard key={course.id} course={course} isAdmin={isAdmin} isStudent={isStudent} onDelete={handleDeleteCourse} />
-        })}
-      </div>
-
-      {/* Empty State */}
-      {filteredCourses?.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-xl border-2 border-dashed border-gray-200">
-          <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
-          <p className="text-gray-500 mb-6">
-            {isAdmin 
-              ? 'Get started by creating your first course' 
-              : 'No courses found in this category'}
-          </p>
-          {isAdmin && (
-            <Button
-              onClick={() => router.push('/dashboard/courses/create')}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white"
-            >
-              <Plus size={18} className="mr-2" />
-              Create Your First Course
-            </Button>
-          )}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-56 sm:h-64">
+          <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-cyan-500" />
         </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-red-100">
+          <p className="text-red-500">Error loading courses. Please try again.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {filteredCourses?.map((course) => {
+              const isStudent = !isAdmin && !isTeacher;
+              return (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  isAdmin={isAdmin}
+                  isStudent={isStudent}
+                  onDelete={handleDeleteCourse}
+                />
+              );
+            })}
+          </div>
+
+          {/* Empty State */}
+          {filteredCourses?.length === 0 && (
+            <div className="mt-4 sm:mt-6 text-center py-12 sm:py-16 bg-white rounded-xl border-2 border-dashed border-gray-200">
+              <GraduationCap className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
+              <p className="text-gray-500 mb-6 text-sm sm:text-base">
+                {isAdmin
+                  ? 'Get started by creating your first course'
+                  : 'No courses found in this category'}
+              </p>
+              {isAdmin && (
+                <Button
+                  onClick={() => router.push('/dashboard/courses/create')}
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                >
+                  <Plus size={18} className="mr-2" />
+                  Create Your First Course
+                </Button>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -60,23 +60,25 @@ export default function SettingsPage() {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       {/* Top header with title & actions */}
-      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-200">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-4 sm:px-6 sm:py-5 lg:px-8 border-b border-gray-200">
+        <div className="flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Settings
+          </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
-            className="border-gray-300"
+            className="border-gray-300 w-full sm:w-auto"
             onClick={handleCancel}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+            className="bg-cyan-500 hover:bg-cyan-600 text-white w-full sm:w-auto"
             onClick={handleSave}
           >
             Save Changes
@@ -84,9 +86,35 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Left tab navigation */}
-        <div className="w-64 border-r border-gray-200 bg-white p-6">
+      <div className="flex flex-col md:flex-row">
+        {/* Mobile tab switcher */}
+        <div className="md:hidden px-4 pt-3 pb-2 border-b border-gray-200 bg-white flex gap-2 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab("personal")}
+            className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
+              activeTab === "personal"
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            Personal Info
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("password")}
+            className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
+              activeTab === "password"
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            Password
+          </button>
+        </div>
+
+        {/* Left tab navigation (desktop) */}
+        <div className="hidden md:block w-64 border-r border-gray-200 bg-white p-6">
           <div className="space-y-2">
             <button
               type="button"
@@ -114,7 +142,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Right content area */}
-        <div className="flex-1 p-10">
+        <div className="flex-1 p-4 sm:p-6 lg:p-10">
           {activeTab === "personal" ? (
             <PersonalInfoForm
               values={personalForm}
