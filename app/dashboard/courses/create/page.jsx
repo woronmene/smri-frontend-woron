@@ -1024,6 +1024,7 @@ function CurriculumBuilderTab({
 function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -1046,6 +1047,32 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
       onUpload(selectedFile);
     }
   };
+
+  // Simulated upload progress for better UX while waiting on network
+  useEffect(() => {
+    if (!uploading) {
+      return;
+    }
+
+    setProgress(10);
+    const id = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(id);
+          return prev;
+        }
+        return prev + 5;
+      });
+    }, 250);
+
+    return () => clearInterval(id);
+  }, [uploading]);
+
+  useEffect(() => {
+    if (!uploading && progress > 0 && progress < 100) {
+      setProgress(100);
+    }
+  }, [uploading, progress]);
 
   const getAcceptedTypes = () => {
     switch (mediaType) {
@@ -1151,6 +1178,21 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
+
+          {progress > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                <span>Uploading media...</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-cyan-500 rounded-full transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
@@ -1165,7 +1207,7 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Uploading...
+                {`Uploading${progress ? ` ${progress}%` : "..."}`}
               </>
             ) : (
               "Upload & Insert"
