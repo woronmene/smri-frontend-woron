@@ -16,19 +16,59 @@ const MOCK_SCHOOLS = [
 ];
 
 const MOCK_STUDENTS = {
-  'SCH001': [
-    { id: 1, name: 'Alice Johnson', email: 'alice@example.com', progress: 75, lastActive: '2023-11-20T10:00:00' },
-    { id: 2, name: 'Bob Smith', email: 'bob@example.com', progress: 100, lastActive: '2023-11-19T14:30:00' },
+  SCH001: [
+    {
+      id: 1,
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      course: 'Introduction to SMRI',
+      progress: 75,
+      lastActive: '2023-11-20T10:00:00',
+      status: 'In Progress',
+    },
+    {
+      id: 2,
+      name: 'Bob Smith',
+      email: 'bob@example.com',
+      course: 'Advanced Learning Strategies',
+      progress: 100,
+      lastActive: '2023-11-19T14:30:00',
+      status: 'Completed',
+    },
   ],
-  'SCH002': [
-    { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', progress: 30, lastActive: '2023-11-21T09:15:00' },
+  SCH002: [
+    {
+      id: 3,
+      name: 'Charlie Brown',
+      email: 'charlie@example.com',
+      course: 'Digital Literacy Fundamentals',
+      progress: 30,
+      lastActive: '2023-11-21T09:15:00',
+      status: 'In Progress',
+    },
   ],
-  'SCH003': [
-     { id: 4, name: 'Diana Ross', email: 'diana@example.com', progress: 0, lastActive: '2023-11-15T16:45:00' },
+  SCH003: [
+    {
+      id: 4,
+      name: 'Diana Ross',
+      email: 'diana@example.com',
+      course: 'Introduction to SMRI',
+      progress: 0,
+      lastActive: '2023-11-15T16:45:00',
+      status: 'Not Started',
+    },
   ],
-  'SCH004': [
-     { id: 5, name: 'Ethan Hunt', email: 'ethan@example.com', progress: 90, lastActive: '2023-11-21T11:20:00' },
-  ]
+  SCH004: [
+    {
+      id: 5,
+      name: 'Ethan Hunt',
+      email: 'ethan@example.com',
+      course: 'Advanced Learning Strategies',
+      progress: 90,
+      lastActive: '2023-11-21T11:20:00',
+      status: 'In Progress',
+    },
+  ],
 };
 
 export default function SchoolStudentsPage() {

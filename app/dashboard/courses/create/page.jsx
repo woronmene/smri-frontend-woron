@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useContext, useEffect } from 'react'; // Added useContext, useEffect
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { AuthContext } from '@/context/AuthContext'; // Import AuthContext
-import { 
-  Upload, 
-  Loader2, 
-  X, 
+import { useState, useContext, useEffect } from "react"; // Added useContext, useEffect
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { AuthContext } from "@/context/AuthContext"; // Import AuthContext
+import {
+  Upload,
+  Loader2,
+  X,
   Plus,
   MoreHorizontal,
   Bold,
@@ -26,35 +26,41 @@ import {
   Maximize2,
   Minimize2,
   Eye,
-  EyeOff
-} from 'lucide-react';
-import { uploadCourseThumbnail, uploadLessonVideo, uploadLessonImage, validateImage, validateVideo } from '@/lib/s3-upload';
-import { createCourse, getCourseById, updateCourse } from '@/lib/firebase-db';
-import CoursePublishedSuccess from '@/components/dashboard/CoursePublishedSuccess';
-import TipTapEditor from '@/components/dashboard/TipTapEditor';
+  EyeOff,
+} from "lucide-react";
+import {
+  uploadCourseThumbnail,
+  uploadLessonVideo,
+  uploadLessonImage,
+  validateImage,
+  validateVideo,
+} from "@/lib/s3-upload";
+import { createCourse, getCourseById, updateCourse } from "@/lib/firebase-db";
+import CoursePublishedSuccess from "@/components/dashboard/CoursePublishedSuccess";
+import TipTapEditor from "@/components/dashboard/TipTapEditor";
 // Removed: import { getCurrentUser } from '@/lib/firebase-auth';
 
 export default function CreateCoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get('courseId');
+  const courseId = searchParams.get("courseId");
   const { user, loading: authLoading } = useContext(AuthContext); // Use AuthContext
 
-  const [activeTab, setActiveTab] = useState('information');
+  const [activeTab, setActiveTab] = useState("information");
   const [loading, setLoading] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [mediaType, setMediaType] = useState(null); // 'video', 'image', 'audio', 'document'
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [courseData, setCourseData] = useState({
-    title: '',
-    shortDescription: '',
-    fullDescription: '',
-    thumbnailUrl: '',
+    title: "",
+    shortDescription: "",
+    fullDescription: "",
+    thumbnailUrl: "",
   });
 
   const [modules, setModules] = useState([]);
@@ -68,38 +74,42 @@ export default function CreateCoursePage() {
   useEffect(() => {
     if (courseId) {
       setLoading(true);
-      getCourseById(courseId).then(course => {
-        setCourseData({
-           title: course.title || '',
-           shortDescription: course.description || '',
-           fullDescription: course.fullDescription || '',
-           thumbnailUrl: course.thumbnail || '',
-        });
-        
-        // Ensure modules structure is compatible for editing
-        if (course.modules) {
-            setModules(course.modules.map(m => ({
+      getCourseById(courseId)
+        .then((course) => {
+          setCourseData({
+            title: course.title || "",
+            shortDescription: course.description || "",
+            fullDescription: course.fullDescription || "",
+            thumbnailUrl: course.thumbnail || "",
+          });
+
+          // Ensure modules structure is compatible for editing
+          if (course.modules) {
+            setModules(
+              course.modules.map((m) => ({
                 ...m,
-                id: Number(m.id) || Date.now() + Math.random(), 
-                lessons: (m.lessons || []).map(l => ({
-                    ...l, 
-                    id: Number(l.id) || Date.now() + Math.random()
-                }))
-            })));
-        }
-        setLoading(false);
-      }).catch(err => {
-        console.error(err);
-        setError('Failed to load course');
-        setLoading(false);
-      });
+                id: Number(m.id) || Date.now() + Math.random(),
+                lessons: (m.lessons || []).map((l) => ({
+                  ...l,
+                  id: Number(l.id) || Date.now() + Math.random(),
+                })),
+              }))
+            );
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError("Failed to load course");
+          setLoading(false);
+        });
     }
-  }, [courseId]); 
+  }, [courseId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCourseData(prev => ({ ...prev, [name]: value }));
-    setError('');
+    setCourseData((prev) => ({ ...prev, [name]: value }));
+    setError("");
   };
 
   const handleThumbnailSelect = (e) => {
@@ -118,7 +128,7 @@ export default function CreateCoursePage() {
       setThumbnailPreview(reader.result);
     };
     reader.readAsDataURL(file);
-    setError('');
+    setError("");
   };
 
   const removeThumbnail = () => {
@@ -132,21 +142,23 @@ export default function CreateCoursePage() {
       id: Date.now(),
       title: `Module ${modules.length + 1}: New Module`,
       lessons: [],
-      isEditing: true
+      isEditing: true,
     };
     setModules([...modules, newModule]);
     setEditingModule(newModule.id);
   };
 
   const updateModuleTitle = (moduleId, title) => {
-    setModules(modules.map(m => 
-      m.id === moduleId ? { ...m, title } : m
-    ));
+    setModules(modules.map((m) => (m.id === moduleId ? { ...m, title } : m)));
   };
 
   const deleteModule = (moduleId) => {
-    if (confirm('Are you sure you want to delete this module and all its lessons?')) {
-      setModules(modules.filter(m => m.id !== moduleId));
+    if (
+      confirm(
+        "Are you sure you want to delete this module and all its lessons?"
+      )
+    ) {
+      setModules(modules.filter((m) => m.id !== moduleId));
       if (selectedLesson?.moduleId === moduleId) {
         setSelectedLesson(null);
       }
@@ -159,54 +171,60 @@ export default function CreateCoursePage() {
 
   // Lesson Management
   const addLesson = (moduleId) => {
-    const module = modules.find(m => m.id === moduleId);
+    const module = modules.find((m) => m.id === moduleId);
     const newLesson = {
       id: Date.now(),
       title: `Lesson ${module.lessons.length + 1}: New Lesson`,
-      content: '',
-      isEditing: true
+      content: "",
+      isEditing: true,
     };
-    
-    setModules(modules.map(m => {
-      if (m.id === moduleId) {
-        return {
-          ...m,
-          lessons: [...m.lessons, newLesson]
-        };
-      }
-      return m;
-    }));
-    
+
+    setModules(
+      modules.map((m) => {
+        if (m.id === moduleId) {
+          return {
+            ...m,
+            lessons: [...m.lessons, newLesson],
+          };
+        }
+        return m;
+      })
+    );
+
     setSelectedLesson({ moduleId, lessonId: newLesson.id });
     setEditingLesson(newLesson.id);
   };
 
   const updateLessonTitle = (moduleId, lessonId, title) => {
-    setModules(modules.map(m => {
-      if (m.id === moduleId) {
-        return {
-          ...m,
-          lessons: m.lessons.map(l => 
-            l.id === lessonId ? { ...l, title } : l
-          )
-        };
-      }
-      return m;
-    }));
-  };
-
-  const deleteLesson = (moduleId, lessonId) => {
-    if (confirm('Are you sure you want to delete this lesson?')) {
-      setModules(modules.map(m => {
+    setModules(
+      modules.map((m) => {
         if (m.id === moduleId) {
           return {
             ...m,
-            lessons: m.lessons.filter(l => l.id !== lessonId)
+            lessons: m.lessons.map((l) =>
+              l.id === lessonId ? { ...l, title } : l
+            ),
           };
         }
         return m;
-      }));
-      
+      })
+    );
+  };
+
+  const deleteLesson = (moduleId, lessonId) => {
+    if (confirm("Are you sure you want to delete this lesson?")) {
+      setModules(
+        modules.map((m) => {
+          if (m.id === moduleId) {
+            return {
+              ...m,
+              lessons: m.lessons.filter((l) => l.id !== lessonId),
+            };
+          }
+          return m;
+        })
+      );
+
       if (selectedLesson?.lessonId === lessonId) {
         setSelectedLesson(null);
       }
@@ -219,28 +237,32 @@ export default function CreateCoursePage() {
 
   const updateLessonContent = (content) => {
     if (!selectedLesson) return;
-    
-    setModules(modules.map(m => {
-      if (m.id === selectedLesson.moduleId) {
-        return {
-          ...m,
-          lessons: m.lessons.map(l => {
-            if (l.id === selectedLesson.lessonId) {
-              return { ...l, content };
-            }
-            return l;
-          })
-        };
-      }
-      return m;
-    }));
+
+    setModules(
+      modules.map((m) => {
+        if (m.id === selectedLesson.moduleId) {
+          return {
+            ...m,
+            lessons: m.lessons.map((l) => {
+              if (l.id === selectedLesson.lessonId) {
+                return { ...l, content };
+              }
+              return l;
+            }),
+          };
+        }
+        return m;
+      })
+    );
   };
 
   const getCurrentLessonContent = () => {
-    if (!selectedLesson) return '';
-    const module = modules.find(m => m.id === selectedLesson.moduleId);
-    const lesson = module?.lessons.find(l => l.id === selectedLesson.lessonId);
-    return lesson?.content || '';
+    if (!selectedLesson) return "";
+    const module = modules.find((m) => m.id === selectedLesson.moduleId);
+    const lesson = module?.lessons.find(
+      (l) => l.id === selectedLesson.lessonId
+    );
+    return lesson?.content || "";
   };
 
   // Media Upload Functions
@@ -251,18 +273,18 @@ export default function CreateCoursePage() {
 
   const handleMediaUpload = async (file) => {
     setUploadingMedia(true);
-    setError('');
+    setError("");
 
     try {
       let uploadResult;
-      
-      if (mediaType === 'image') {
+
+      if (mediaType === "image") {
         const validation = validateImage(file, 10);
         if (!validation.valid) {
           throw new Error(validation.error);
         }
         uploadResult = await uploadLessonImage(file);
-      } else if (mediaType === 'video') {
+      } else if (mediaType === "video") {
         const validation = validateVideo(file, 200);
         if (!validation.valid) {
           throw new Error(validation.error);
@@ -289,19 +311,19 @@ export default function CreateCoursePage() {
 
   const insertMediaIntoContent = (url, type) => {
     const currentContent = getCurrentLessonContent();
-    let mediaMarkup = '';
+    let mediaMarkup = "";
 
     switch (type) {
-      case 'image':
+      case "image":
         mediaMarkup = `<img src="${url}" alt="Image" />`;
         break;
-      case 'video':
+      case "video":
         mediaMarkup = `<video src="${url}" controls class="w-full h-auto rounded-lg shadow-md aspect-video my-4"></video>`;
         break;
-      case 'audio':
+      case "audio":
         mediaMarkup = `<p><a href="${url}" target="_blank" class="text-cyan-600">[AUDIO] Listen to Audio</a></p>`;
         break;
-      case 'document':
+      case "document":
         mediaMarkup = `<p><a href="${url}" target="_blank" class="text-cyan-600">[DOCUMENT] Download Document</a></p>`;
         break;
       default:
@@ -312,27 +334,27 @@ export default function CreateCoursePage() {
   };
 
   const insertLink = () => {
-    const url = prompt('Enter URL:');
+    const url = prompt("Enter URL:");
     if (url) {
-      const text = prompt('Enter link text:');
+      const text = prompt("Enter link text:");
       const linkMarkup = `[${text || url}](${url})`;
-      updateLessonContent(getCurrentLessonContent() + ' ' + linkMarkup);
+      updateLessonContent(getCurrentLessonContent() + " " + linkMarkup);
     }
   };
 
   const handleSaveDraft = async () => {
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       // Minimal validation for Drafts
       if (!courseData.title.trim()) {
-        throw new Error('Course title is required to save a draft');
+        throw new Error("Course title is required to save a draft");
       }
 
       // Use user from context
       if (!user) {
-        throw new Error('You must be signed in to save a draft');
+        throw new Error("You must be signed in to save a draft");
       }
 
       // Handle Thumbnail Upload if strictly necessary or provided
@@ -340,17 +362,17 @@ export default function CreateCoursePage() {
       if (thumbnailFile) {
         const uploadResult = await uploadCourseThumbnail(thumbnailFile);
         if (!uploadResult.success) {
-          throw new Error('Failed to upload thumbnail: ' + uploadResult.error);
+          throw new Error("Failed to upload thumbnail: " + uploadResult.error);
         }
         thumbnailUrl = uploadResult.url;
       }
 
       const course = {
         title: courseData.title,
-        description: courseData.shortDescription || '',
-        fullDescription: courseData.fullDescription || '',
-        thumbnail: thumbnailUrl || '',
-        status: 'draft', // Explicitly marking as draft
+        description: courseData.shortDescription || "",
+        fullDescription: courseData.fullDescription || "",
+        thumbnail: thumbnailUrl || "",
+        status: "draft", // Explicitly marking as draft
         modules: modules.map((m, idx) => ({
           id: m.id.toString(),
           title: m.title,
@@ -358,25 +380,24 @@ export default function CreateCoursePage() {
           lessons: m.lessons.map((l, lIdx) => ({
             id: l.id.toString(),
             title: l.title,
-            content: l.content || '',
-            order: lIdx + 1
-          }))
+            content: l.content || "",
+            order: lIdx + 1,
+          })),
         })),
-        createdBy: user.id || user.uid || 'mock-user-id', // Handle Mock/Firebase hybrid
+        createdBy: user.id || user.uid || "mock-user-id", // Handle Mock/Firebase hybrid
         createdByEmail: user.email,
       };
 
       if (courseId) {
-         await updateCourse(courseId, course);
+        await updateCourse(courseId, course);
       } else {
-         await createCourse(course);
+        await createCourse(course);
       }
-      
+
       // UX: Navigate back to dashboard with success (or just alert for now)
       // router.push('/dashboard?message=draft-saved');
-      alert('Course saved as draft! You can continue editing it later.');
-      router.push('/dashboard'); 
-
+      alert("Course saved as draft! You can continue editing it later.");
+      router.push("/dashboard");
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -386,32 +407,36 @@ export default function CreateCoursePage() {
   };
 
   const handlePublish = async () => {
-    setError('');
+    setError("");
     setLoading(true);
     try {
       // STRICT Validation for Publishing
-      if (!courseData.title.trim()) throw new Error('Course title is required');
-      if (!courseData.shortDescription.trim()) throw new Error('Short description is required');
-      if (!courseData.fullDescription.trim()) throw new Error('Full description is required');
-      
+      if (!courseData.title.trim()) throw new Error("Course title is required");
+      if (!courseData.shortDescription.trim())
+        throw new Error("Short description is required");
+      if (!courseData.fullDescription.trim())
+        throw new Error("Full description is required");
+
       if (!thumbnailFile && !courseData.thumbnailUrl) {
-        throw new Error('Course thumbnail is required');
+        throw new Error("Course thumbnail is required");
       }
 
       if (modules.length === 0) {
-        throw new Error('Please add at least one module');
+        throw new Error("Please add at least one module");
       }
 
-      // Ensure every module has at least one lesson and lessons have content? 
+      // Ensure every module has at least one lesson and lessons have content?
       // User requested "all details are provided".
-      const emptyModule = modules.find(m => m.lessons.length === 0);
+      const emptyModule = modules.find((m) => m.lessons.length === 0);
       if (emptyModule) {
-        throw new Error(`Module "${emptyModule.title}" has no lessons. Please add lessons or remove the module.`);
+        throw new Error(
+          `Module "${emptyModule.title}" has no lessons. Please add lessons or remove the module.`
+        );
       }
 
       // Use user from context
       if (!user) {
-        throw new Error('You must be signed in');
+        throw new Error("You must be signed in");
       }
 
       let thumbnailUrl = courseData.thumbnailUrl;
@@ -428,7 +453,7 @@ export default function CreateCoursePage() {
         description: courseData.shortDescription,
         fullDescription: courseData.fullDescription,
         thumbnail: thumbnailUrl,
-        status: 'published', // Explicitly marking as published
+        status: "published", // Explicitly marking as published
         modules: modules.map((m, idx) => ({
           id: m.id.toString(),
           title: m.title,
@@ -437,18 +462,18 @@ export default function CreateCoursePage() {
             id: l.id.toString(),
             title: l.title,
             content: l.content,
-            order: lIdx + 1
-          }))
+            order: lIdx + 1,
+          })),
         })),
-        createdBy: user.id || user.uid || 'mock-user-id',
+        createdBy: user.id || user.uid || "mock-user-id",
         createdByEmail: user.email,
-        publishedAt: new Date().toISOString() // Add published timestamp
+        publishedAt: new Date().toISOString(), // Add published timestamp
       };
 
       if (courseId) {
-         await updateCourse(courseId, course);
+        await updateCourse(courseId, course);
       } else {
-         await createCourse(course);
+        await createCourse(course);
       }
       setLoading(false); // Stop loading before showing success
       setShowSuccess(true);
@@ -461,9 +486,9 @@ export default function CreateCoursePage() {
 
   if (showSuccess) {
     return (
-      <CoursePublishedSuccess 
-        onBackToCourses={() => router.push('/dashboard')} 
-        onClose={() => router.push('/dashboard')}
+      <CoursePublishedSuccess
+        onBackToCourses={() => router.push("/dashboard")}
+        onClose={() => router.push("/dashboard")}
       />
     );
   }
@@ -479,7 +504,7 @@ export default function CreateCoursePage() {
               onClick={() => router.back()}
               className="text-gray-600 hover:text-gray-900"
             >
-              ← 
+              ←
             </button>
             <h1 className="text-2xl font-bold text-gray-900">Create Course</h1>
           </div>
@@ -488,23 +513,16 @@ export default function CreateCoursePage() {
               onClick={handleSaveDraft}
               variant="outline"
               disabled={loading}
-              className="border-gray-300"
+              className="border-gray-300 cursor-pointer rounded-[100px]"
             >
               Save as Draft
             </Button>
             <Button
               onClick={handlePublish}
               disabled={loading}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white"
+              className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer rounded-[100px] px-5 py-3 text-white"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                'Publish Course'
-              )}
+              Publish Course
             </Button>
           </div>
         </div>
@@ -514,21 +532,21 @@ export default function CreateCoursePage() {
           {/* Tab Sidebar */}
           <div className="w-64 bg-white border-r border-gray-200 p-4">
             <button
-              onClick={() => setActiveTab('information')}
+              onClick={() => setActiveTab("information")}
               className={`w-full text-left px-5 py-3 rounded-xl mb-4 transition-all ${
-                activeTab === 'information'
-                  ? 'bg-[#FAFAFA] border border-[#E5E5E5] text-black font-bold'
-                  : 'text-gray-500 hover:text-gray-700 font-medium border border-transparent'
+                activeTab === "information"
+                  ? "bg-[#FAFAFA] border border-[#E5E5E5] text-black font-bold"
+                  : "text-gray-500 hover:text-gray-700 font-medium border border-transparent"
               }`}
             >
               Course Information
             </button>
             <button
-              onClick={() => setActiveTab('curriculum')}
+              onClick={() => setActiveTab("curriculum")}
               className={`w-full text-left px-5 py-3 rounded-xl transition-all ${
-                activeTab === 'curriculum'
-                  ? 'bg-[#FAFAFA] border border-[#E5E5E5] text-black font-bold'
-                  : 'text-gray-500 hover:text-gray-700 font-medium border border-transparent'
+                activeTab === "curriculum"
+                  ? "bg-[#FAFAFA] border border-[#E5E5E5] text-black font-bold"
+                  : "text-gray-500 hover:text-gray-700 font-medium border border-transparent"
               }`}
             >
               Curriculum Builder
@@ -537,7 +555,7 @@ export default function CreateCoursePage() {
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-8">
-            {activeTab === 'information' ? (
+            {activeTab === "information" ? (
               <CourseInformationTab
                 courseData={courseData}
                 handleInputChange={handleInputChange}
@@ -588,66 +606,79 @@ export default function CreateCoursePage() {
 // LessonContentPreview removed as it is replaced by TipTapEditor in read-only mode
 
 // Course Information Tab Component... (SAME AS BEFORE)
-function CourseInformationTab({ 
-  courseData, 
-  handleInputChange, 
-  thumbnailPreview, 
-  handleThumbnailSelect, 
+function CourseInformationTab({
+  courseData,
+  handleInputChange,
+  thumbnailPreview,
+  handleThumbnailSelect,
   removeThumbnail,
-  error 
+  error,
 }) {
   return (
     <div className="max-w-5xl">
       <div className="mb-8 pb-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Course Information</h2>
-        <p className="text-gray-500 text-sm">Add details that describe your course and help learners know what to expect</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">
+          Course Information
+        </h2>
+        <p className="text-gray-500 text-sm">
+          Add details that describe your course and help learners know what to
+          expect
+        </p>
       </div>
 
       <div className="space-y-8">
         {/* Course Thumbnail */}
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">Course Thumbnail</label>
+          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+            Course Thumbnail
+          </label>
           <div className="flex-1 flex items-center gap-4">
-             {/* Thumbnail Preview or Placeholder */}
-             <div className="relative flex-shrink-0">
-               {thumbnailPreview ? (
-                 <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
-                   <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={removeThumbnail}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                    >
-                      <X size={10} />
-                    </button>
-                 </div>
-               ) : (
-                 <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    {/* Placeholder circle matching design */}
-                 </div>
-               )}
-             </div>
+            {/* Thumbnail Preview or Placeholder */}
+            <div className="relative flex-shrink-0">
+              {thumbnailPreview ? (
+                <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                  {/* Placeholder circle matching design */}
+                </div>
+              )}
+            </div>
 
-             <label
-               htmlFor="thumbnail"
-               className="px-6 py-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 bg-white cursor-pointer transition-colors"
-             >
-               Choose
-               <input
-                 id="thumbnail"
-                 type="file"
-                 className="hidden"
-                 accept="image/*"
-                 onChange={handleThumbnailSelect}
-               />
-             </label>
-             <span className="text-gray-400 text-sm">JPG or PNG. 1MB max</span>
+            <label
+              htmlFor="thumbnail"
+              className="px-6 py-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 bg-white cursor-pointer transition-colors"
+            >
+              Choose
+              <input
+                id="thumbnail"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleThumbnailSelect}
+              />
+            </label>
+            <span className="text-gray-400 text-sm">JPG or PNG. 1MB max</span>
           </div>
         </div>
 
         {/* Course Title */}
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">Course Title</label>
+          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+            Course Title
+          </label>
           <div className="flex-1">
             <Input
               name="title"
@@ -661,7 +692,9 @@ function CourseInformationTab({
 
         {/* Short Description */}
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">Short Description</label>
+          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+            Short Description
+          </label>
           <div className="flex-1">
             <Input
               name="shortDescription"
@@ -675,7 +708,9 @@ function CourseInformationTab({
 
         {/* Full Description */}
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">Full Description</label>
+          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+            Full Description
+          </label>
           <div className="flex-1">
             <Input
               name="fullDescription"
@@ -715,15 +750,20 @@ function CurriculumBuilderTab({
   getCurrentLessonContent,
   updateLessonContent,
   openMediaModal,
-  insertLink
+  insertLink,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   return (
     <div className="max-w-6xl">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Curriculum Builder</h2>
-      <p className="text-gray-600 mb-8">Create course modules, add lessons, and include text, video, or files in each lesson</p>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        Curriculum Builder
+      </h2>
+      <p className="text-gray-600 mb-8">
+        Create course modules, add lessons, and include text, video, or files in
+        each lesson
+      </p>
 
       <div className="space-y-8">
         {/* Modules Section */}
@@ -731,18 +771,25 @@ function CurriculumBuilderTab({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Modules</h3>
           <div className="space-y-3">
             {modules.map((module) => (
-              <div key={module.id} className="border border-cyan-200 bg-cyan-50 rounded-lg p-4">
+              <div
+                key={module.id}
+                className="border border-cyan-200 bg-cyan-50 rounded-lg p-4"
+              >
                 <div className="flex items-center justify-between mb-2">
                   {editingModule === module.id ? (
                     <Input
                       value={module.title}
-                      onChange={(e) => updateModuleTitle(module.id, e.target.value)}
+                      onChange={(e) =>
+                        updateModuleTitle(module.id, e.target.value)
+                      }
                       onBlur={() => toggleEditModule(module.id)}
                       autoFocus
                       className="flex-1 mr-2 bg-white"
                     />
                   ) : (
-                    <span className="font-medium text-gray-900 flex-1">{module.title}</span>
+                    <span className="font-medium text-gray-900 flex-1">
+                      {module.title}
+                    </span>
                   )}
                   <div className="flex items-center gap-2">
                     <button
@@ -779,33 +826,49 @@ function CurriculumBuilderTab({
         </div>
 
         {/* Lessons Section */}
-        {modules.some(m => m.lessons.length > 0) && (
+        {modules.some((m) => m.lessons.length > 0) && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lessons</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Lessons
+            </h3>
             <div className="space-y-3">
               {modules.map((module) =>
                 module.lessons.map((lesson) => (
                   <div
                     key={`${module.id}-${lesson.id}`}
-                    onClick={() => setSelectedLesson({ moduleId: module.id, lessonId: lesson.id })}
+                    onClick={() =>
+                      setSelectedLesson({
+                        moduleId: module.id,
+                        lessonId: lesson.id,
+                      })
+                    }
                     className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                      selectedLesson?.moduleId === module.id && selectedLesson?.lessonId === lesson.id
-                        ? 'border-cyan-500 bg-cyan-50'
-                        : 'border-cyan-200 bg-cyan-50 hover:border-cyan-300'
+                      selectedLesson?.moduleId === module.id &&
+                      selectedLesson?.lessonId === lesson.id
+                        ? "border-cyan-500 bg-cyan-50"
+                        : "border-cyan-200 bg-cyan-50 hover:border-cyan-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       {editingLesson === lesson.id ? (
                         <Input
                           value={lesson.title}
-                          onChange={(e) => updateLessonTitle(module.id, lesson.id, e.target.value)}
+                          onChange={(e) =>
+                            updateLessonTitle(
+                              module.id,
+                              lesson.id,
+                              e.target.value
+                            )
+                          }
                           onBlur={() => toggleEditLesson(lesson.id)}
                           onClick={(e) => e.stopPropagation()}
                           autoFocus
                           className="flex-1 mr-2 bg-white"
                         />
                       ) : (
-                        <span className="font-medium text-gray-900 flex-1">{lesson.title}</span>
+                        <span className="font-medium text-gray-900 flex-1">
+                          {lesson.title}
+                        </span>
                       )}
                       <div className="flex items-center gap-2">
                         <button
@@ -837,62 +900,84 @@ function CurriculumBuilderTab({
 
         {/* Lesson Content Editor */}
         {selectedLesson && (
-          <div className={isExpanded ? "fixed inset-0 z-50 bg-white p-8 flex flex-col" : "relative h-[600px] flex flex-col"}>
+          <div
+            className={
+              isExpanded
+                ? "fixed inset-0 z-50 bg-white p-8 flex flex-col"
+                : "relative h-[600px] flex flex-col"
+            }
+          >
             <div className="flex items-center justify-between mb-4">
-               <h3 className="text-lg font-semibold text-gray-900">
-                  {isExpanded ? (
-                     <span>Editing: {modules.find(m => m.id === selectedLesson.moduleId)?.lessons.find(l => l.id === selectedLesson.lessonId)?.title}</span>
-                  ) : "Lesson Content"}
-               </h3>
-               
-               <div className="flex items-center gap-2">
-                   <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsPreviewMode(!isPreviewMode)}
-                      className="gap-2"
-                   >
-                     {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />}
-                     {isPreviewMode ? "Edit Mode" : "Preview"}
-                   </Button>
-                   
-                   <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="gap-2"
-                   >
-                     {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                     {isExpanded ? "Collapse" : "Expand"}
-                   </Button>
-               </div>
-            </div>
-            
-            <div className="flex-1 overflow-hidden">
-                {isPreviewMode ? (
-                  <div className="border border-gray-200 rounded-lg p-6 bg-white h-full overflow-y-auto prose prose-lg max-w-none">
-                     <TipTapEditor 
-                        content={getCurrentLessonContent()} 
-                        editable={false} 
-                        onChange={() => {}} 
-                     />
-                  </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {isExpanded ? (
+                  <span>
+                    Editing:{" "}
+                    {
+                      modules
+                        .find((m) => m.id === selectedLesson.moduleId)
+                        ?.lessons.find((l) => l.id === selectedLesson.lessonId)
+                        ?.title
+                    }
+                  </span>
                 ) : (
-                  <TipTapEditor 
-                    content={getCurrentLessonContent()} 
-                    onChange={updateLessonContent}
-                    onAddImage={() => openMediaModal('image')}
-                    onAddVideo={() => openMediaModal('video')}
-                    onAddAudio={() => openMediaModal('audio')}
-                    onAddDocument={() => openMediaModal('document')}
-                  />
+                  "Lesson Content"
                 )}
+              </h3>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsPreviewMode(!isPreviewMode)}
+                  className="gap-2"
+                >
+                  {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {isPreviewMode ? "Edit Mode" : "Preview"}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="gap-2"
+                >
+                  {isExpanded ? (
+                    <Minimize2 size={16} />
+                  ) : (
+                    <Maximize2 size={16} />
+                  )}
+                  {isExpanded ? "Collapse" : "Expand"}
+                </Button>
+              </div>
             </div>
-            {!isPreviewMode && <p className="text-xs text-gray-500 mt-2">Auto-saving...</p>}
+
+            <div className="flex-1 overflow-hidden">
+              {isPreviewMode ? (
+                <div className="border border-gray-200 rounded-lg p-6 bg-white h-full overflow-y-auto prose prose-lg max-w-none">
+                  <TipTapEditor
+                    content={getCurrentLessonContent()}
+                    editable={false}
+                    onChange={() => {}}
+                  />
+                </div>
+              ) : (
+                <TipTapEditor
+                  content={getCurrentLessonContent()}
+                  onChange={updateLessonContent}
+                  onAddImage={() => openMediaModal("image")}
+                  onAddVideo={() => openMediaModal("video")}
+                  onAddAudio={() => openMediaModal("audio")}
+                  onAddDocument={() => openMediaModal("document")}
+                />
+              )}
+            </div>
+            {!isPreviewMode && (
+              <p className="text-xs text-gray-500 mt-2">Auto-saving...</p>
+            )}
           </div>
         )}
 
-        {!selectedLesson && modules.some(m => m.lessons.length > 0) && (
+        {!selectedLesson && modules.some((m) => m.lessons.length > 0) && (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
             <p className="text-gray-500">Select a lesson to edit its content</p>
           </div>
@@ -914,7 +999,7 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
     setSelectedFile(file);
 
     // Create preview for images
-    if (mediaType === 'image' && file.type.startsWith('image/')) {
+    if (mediaType === "image" && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
@@ -931,31 +1016,31 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
 
   const getAcceptedTypes = () => {
     switch (mediaType) {
-      case 'image':
-        return 'image/*';
-      case 'video':
-        return 'video/*';
-      case 'audio':
-        return 'audio/*';
-      case 'document':
-        return '.pdf,.doc,.docx,.txt';
+      case "image":
+        return "image/*";
+      case "video":
+        return "video/*";
+      case "audio":
+        return "audio/*";
+      case "document":
+        return ".pdf,.doc,.docx,.txt";
       default:
-        return '*';
+        return "*";
     }
   };
 
   const getTitle = () => {
     switch (mediaType) {
-      case 'image':
-        return 'Upload Image';
-      case 'video':
-        return 'Upload Video';
-      case 'audio':
-        return 'Upload Audio';
-      case 'document':
-        return 'Upload Document';
+      case "image":
+        return "Upload Image";
+      case "video":
+        return "Upload Video";
+      case "audio":
+        return "Upload Audio";
+      case "document":
+        return "Upload Document";
       default:
-        return 'Upload File';
+        return "Upload File";
     }
   };
 
@@ -978,12 +1063,14 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
             <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-cyan-500 hover:bg-cyan-50 transition-colors">
               <div className="text-center">
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-600 font-medium">Click to select file</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Click to select file
+                </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {mediaType === 'video' && 'MP4, WebM (max 200MB)'}
-                  {mediaType === 'image' && 'JPG, PNG (max 10MB)'}
-                  {mediaType === 'audio' && 'MP3, WAV (max 50MB)'}
-                  {mediaType === 'document' && 'PDF, DOC, TXT (max 10MB)'}
+                  {mediaType === "video" && "MP4, WebM (max 200MB)"}
+                  {mediaType === "image" && "JPG, PNG (max 10MB)"}
+                  {mediaType === "audio" && "MP3, WAV (max 50MB)"}
+                  {mediaType === "document" && "PDF, DOC, TXT (max 10MB)"}
                 </p>
               </div>
               <input
@@ -998,11 +1085,17 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
             <div className="space-y-4">
               {preview && (
                 <div className="w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
               <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {selectedFile.name}
+                </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
@@ -1028,11 +1121,7 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
         </div>
 
         <div className="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            disabled={uploading}
-          >
+          <Button onClick={onClose} variant="outline" disabled={uploading}>
             Cancel
           </Button>
           <Button
@@ -1046,7 +1135,7 @@ function MediaUploadModal({ mediaType, onClose, onUpload, uploading, error }) {
                 Uploading...
               </>
             ) : (
-              'Upload & Insert'
+              "Upload & Insert"
             )}
           </Button>
         </div>
