@@ -1,20 +1,55 @@
-import { NextResponse } from "next/server";
-import { mockUsers } from "@/mock/users";
 
+import { NextResponse } from "next/server";
+
+const USER_SERVICE_URL =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "http://localhost:8002";
 
 export async function POST(req) {
-  const { token, new_password } = await req.json();
+  try {
+    const { email, token, new_password, type } = await req.json();
 
-  if (token !== "mock-reset-token") {
-    return NextResponse.json({ message: "Invalid token" }, { status: 400 });
+    if (!email || !token || !new_password) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const isOrg = type === "organization";
+    const endpoint = isOrg
+      ? `${USER_SERVICE_URL}/auth/schools/password-update`
+      : `${USER_SERVICE_URL}/auth/password-update`;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        token,
+        new_password,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return NextResponse.json(
+        { message: data.detail || data.message || "Could not update password" },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json(data);
+
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  // mock update: update first user
-  if (mockUsers.length > 0) {
-    mockUsers[0].password = new_password;
-  }
-
-  return NextResponse.json({
-    message: "Password reset successfully",
-  });
 }

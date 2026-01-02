@@ -18,8 +18,9 @@ export default function AnalyticsPage() {
   }
 
   // Determine role
-  const isTeacher = user?.role === 'teacher' || user?.email?.includes('teacher');
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
+  // Determine role
+  const isTeacher = user?.role === 'teacher' || user?.role === "school_admin" || user?.role === "smri_admin" || user?.email?.includes('teacher');
+  const isAdmin = user?.role === 'admin' || user?.role === "smri_admin" || user?.email?.includes('admin');
 
   // If student (or neither), maybe redirect or show simplified view. 
   // Requirement says "show up for just teachers and admin".

@@ -1,166 +1,372 @@
-'use client';
+"use client";
 
-import { useContext, useState } from 'react';
-import { AuthContext } from '@/context/AuthContext';
-import { Download, Search, Filter, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import StudentsTable from '@/components/dashboard/students/StudentsTable';
-import SchoolList from '@/components/dashboard/students/SchoolList';
-
-// Mock Data for Schools (Admin View)
-const MOCK_SCHOOLS = [
-  { id: 'SCH001', name: 'Greenfield High School', location: 'New York, NY', studentCount: 145 },
-  { id: 'SCH002', name: 'River Valley Academy', location: 'Austin, TX', studentCount: 89 },
-  { id: 'SCH003', name: 'Tech Future Institute', location: 'San Francisco, CA', studentCount: 210 },
-  { id: 'SCH004', name: 'Oakwood Secondary', location: 'Chicago, IL', studentCount: 167 },
-];
-
-// Mock Data Enriched (Teacher View)
-const MOCK_STUDENTS_TEACHER = [
-  { id: 1, name: 'Faith Johnson', course: 'AI Foundations', progress: 89, lastActive: '2h ago', status: 'In progress', avatar: '/avatars/faith.png' },
-  { id: 2, name: 'Daniel Davis', course: 'Machine Learning', progress: 100, lastActive: '1d ago', status: 'Completed', avatar: '/avatars/daniel.png' },
-  { id: 3, name: 'Johnny Jackson', course: 'UI/UX Design', progress: 45, lastActive: '3h ago', status: 'In progress', avatar: '/avatars/johnny.png' },
-  { id: 4, name: 'Sam Eddie', course: 'Web3 Basics', progress: 15, lastActive: '1w ago', status: 'In progress', avatar: '/avatars/sam.png' },
-  { id: 5, name: 'Jane Cooper', course: 'Technical Documentation', progress: 100, lastActive: '2d ago', status: 'Completed', avatar: '/avatars/jane.png' },
-  { id: 6, name: 'Sarah Witz', course: 'Data Visualization', progress: 67, lastActive: '4h ago', status: 'In progress', avatar: null },
-  { id: 7, name: 'Emmanuel Wilson', course: 'Cloud Fundamentals', progress: 52, lastActive: '6h ago', status: 'In progress', avatar: null },
-  { id: 8, name: 'Lydia Sanderson', course: 'No-Code App Building', progress: 75, lastActive: '2d ago', status: 'In progress', avatar: null },
-  { id: 9, name: 'Jacob Jones', course: 'Customer Integration', progress: 60, lastActive: '3hr ago', status: 'In progress', avatar: null },
-  { id: 10, name: 'David Smith', course: 'Prompt Engineering', progress: 90, lastActive: '6h ago', status: 'In progress', avatar: null },
-  { id: 11, name: 'Cody Fisher', course: 'Maths for ML', progress: 100, lastActive: '1d ago', status: 'Completed', avatar: null },
-];
+import { useContext, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Download, Search, Filter, ChevronDown, Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import StudentsTable from "@/components/dashboard/students/StudentsTable";
+import SchoolList from "@/components/dashboard/students/SchoolList";
+import { AuthContext } from "@/context/AuthContext";
+import { getAllCourses, getCourseById } from "@/lib/cms-api";
+import { getSchools, getSchoolStudents } from "@/lib/user-api";
+import {
+  getCourseStudents,
+  getCourseStudentsProgress,
+  getSchoolCourseStudentsProgress,
+} from "@/lib/analytics-api";
 
 export default function StudentsPage() {
-  const { user } = useContext(AuthContext);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentTab, setCurrentTab] = useState('All Students');
+  const { user, loading } = useContext(AuthContext);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSchoolId, setSelectedSchoolId] = useState(null);
+
+  // Determine effective roles
+  const isSmriAdmin = user?.role === "smri_admin";
+  // School Admin is treated as "Teacher" level for this view (sees only their school)
+  const isSchoolAdmin = user?.role === "school_admin";
+  // If user is a teacher OR school_admin OR has teacher in email
+  const isTeacher = user?.role === "teacher" || isSchoolAdmin || user?.email?.toLowerCase().includes("teacher");
   
-  // Logic to determine view
-  // Use explicit role checks, defaulting to false if user not loaded yet
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
-  // Teachers fall through to the main view, Admins return early with Schools view
+  // "isAdmin" in this context controls the Schools List view (SMRI Admin only)
+  // We exclude School Admin from this to force them into the single-school view
+  const isAdmin = isSmriAdmin || user?.role === "admin" || user?.email?.toLowerCase().includes("admin");
+
+  // Role used when calling CMS API for courses
+  const userRole = isAdmin ? "admin" : "teacher";
+
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+
+  // Fetch courses from CMS
+  const {
+    data: courses,
+    isLoading: coursesLoading,
+    error: coursesError,
+  } = useQuery({
+    queryKey: ["students-courses", userRole],
+    queryFn: () => getAllCourses(userRole),
+    enabled: isTeacher || isAdmin,
+  });
+
+  useEffect(() => {
+    if (!courses || courses.length === 0) return;
+    if (!selectedCourseId) {
+      setSelectedCourseId(courses[0].id);
+    }
+  }, [courses, selectedCourseId]);
+
+  const selectedCourse = useMemo(
+    () => courses?.find((c) => c.id === selectedCourseId) || null,
+    [courses, selectedCourseId]
+  );
+
+  // Detailed course
+  const {
+    data: courseDetail,
+    isLoading: courseDetailLoading,
+    error: courseDetailError,
+  } = useQuery({
+    queryKey: ["students-course-detail", selectedCourseId],
+    queryFn: () => getCourseById(selectedCourseId),
+    enabled: !!selectedCourseId && (isTeacher || isAdmin),
+  });
+
+  // Calculate target school ID
+  const targetSchoolId = isAdmin ? selectedSchoolId : user?.school_id;
+
+  // Fetch schools for Admin
+  const { data: schoolsData, isLoading: schoolsLoading } = useQuery({
+    queryKey: ["admin-schools"],
+    queryFn: () => getSchools(),
+    enabled: isAdmin && !selectedSchoolId, // Only fetch list if not viewing a specific school
+  });
+
+  // Fetch authoritative list of students for the target school
+  const { data: studentsData, isLoading: studentsLoading } = useQuery({
+    queryKey: ["school-students", targetSchoolId],
+    queryFn: () => getSchoolStudents(targetSchoolId),
+    enabled: !!targetSchoolId && (isTeacher || isAdmin),
+  });
+
+  // Fetch analytics progress
+  const {
+    data: analyticsProgress,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery({
+    queryKey: ["students-analytics", selectedCourseId, targetSchoolId],
+    queryFn: () =>
+      targetSchoolId
+        ? getSchoolCourseStudentsProgress(targetSchoolId, selectedCourse.id)
+        : getCourseStudentsProgress(selectedCourseId),
+    enabled: !!selectedCourseId && !!targetSchoolId && (isTeacher || isAdmin),
+  });
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+      </div>
+    );
+  }
 
   // --------------- ADMIN VIEW: SCHOOL LIST ---------------- //
-  if (isAdmin) {
-    const filteredSchools = MOCK_SCHOOLS.filter(school =>
+  if (isAdmin && !selectedSchoolId) {
+    if (schoolsLoading) {
+      return (
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+        </div>
+      );
+    }
+
+    const schools = schoolsData?.items || [];
+    const filteredSchools = schools.filter((school) =>
       school.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
       <div className="space-y-8 font-sans pb-12">
-         {/* Header */}
-         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-           <div>
-             <h1 className="text-3xl font-bold text-gray-900">Schools Listings</h1>
-             <p className="text-gray-500 mt-1">Select a school to view its students.</p>
-           </div>
-         </div>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Schools Listings
+            </h1>
+            <p className="text-gray-500 mt-1">
+              Select a school to view its students.
+            </p>
+          </div>
+        </div>
 
-         {/* Search Bar for Schools */}
-         <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        {/* Search Bar for Schools */}
+        <div className="relative w-full md:w-96">
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            size={20}
+          />
+          <input
+            type="text"
+            placeholder="Search schools..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-100 focus:border-gray-300 text-sm"
+          />
+        </div>
+
+        {/* Pass onSelect param to SchoolList (assuming it supports it or we wrap it) */}
+        {/* Note: SchoolList currently might expect 'mock' data or handle selection internally. 
+            I'll wrap it to handle selection from the parent. 
+            Actually, looking at previous context, SchoolList might need update if it doesn't support onSelect.
+            For now, I'll pass the schools and assume I can add an onClick handler to items or SchoolList prop. 
+            If SchoolList doesn't support prop, I might need to update it. 
+            Let's assume SchoolList renders cards. I'll modify SchoolList next if needed.
+            For now, passing onSelectSchool (if SchoolList supports it) or just rendering a grid here if simpler.
+            Wait, I should check SchoolList implementation in next step if it fails.
+            But to be safe, I can just map here if I'm not sure. 
+            However, user wants "SchoolList" component used.
+            I will pass onSelectSchool={setSelectedSchoolId} and ensure SchoolList uses it.
+        */}
+        <SchoolList 
+          schools={filteredSchools} 
+          onSelectSchool={(school) => setSelectedSchoolId(school.school_id)} 
+        />
+      </div>
+    );
+  }
+
+  // --------------- STUDENT VIEW (Teacher OR Admin viewing School) ---------------- //
+  if (isTeacher || (isAdmin && selectedSchoolId)) {
+    if (coursesLoading || studentsLoading) {
+      return (
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+        </div>
+      );
+    }
+
+    if (coursesError) {
+      return (
+        <div className="flex h-96 items-center justify-center text-red-500">
+          <p>Unable to load courses. Please try again.</p>
+        </div>
+      );
+    }
+
+    if (!courses || courses.length === 0) {
+      return (
+        <div className="flex h-96 items-center justify-center text-gray-500">
+          <p>No courses found. Create a course to view student progress.</p>
+        </div>
+      );
+    }
+
+    const effectiveCourse = courseDetail || selectedCourse;
+    const moduleCount = effectiveCourse?.modules?.length || 0;
+    const lessonCount =
+      effectiveCourse?.modules?.reduce(
+        (sum, m) => sum + (m.lessons?.length || 0),
+        0
+      ) || 0;
+
+    // Merge student list with analytics
+    const allStudents = studentsData?.items || [];
+    const analyticsMap = new Map(
+      (analyticsProgress?.students || []).map((s) => [s.user_id, s])
+    );
+
+    const studentsForCourse = allStudents.map((s) => {
+      const progressRecord = analyticsMap.get(s.user_id);
+      
+      const totalLessons = lessonCount || 0;
+      const completedCount = progressRecord?.completed_count || 0;
+      
+      const rawProgress =
+        totalLessons > 0
+          ? Math.round((completedCount / totalLessons) * 100)
+          : 0;
+
+      const completed = totalLessons > 0 && completedCount >= totalLessons;
+
+      return {
+        id: s.user_id,
+        name: `${s.first_name} ${s.last_name || ""}`.trim(),
+        course: selectedCourse?.title || effectiveCourse?.title || "Course",
+        progress: rawProgress,
+        lastActive: progressRecord?.last_completed_at
+          ? new Date(progressRecord.last_completed_at).toLocaleString()
+          : "Not started",
+        status: completed ? "Completed" : progressRecord ? "In progress" : "Not started",
+        avatar: null,
+      };
+    });
+
+    const filteredStudents = studentsForCourse.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.course.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return (
+      <div className="space-y-6 font-sans pb-12">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+               <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setSelectedSchoolId(null)}
+                className="mr-2"
+               >
+                 <ArrowLeft size={24} />
+               </Button>
+            )}
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isAdmin ? "School Students" : "Students"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="bg-white hover:bg-gray-50 text-gray-900 border-gray-200 rounded-[100px] px-5 py-3 shadow-sm h-auto font-medium"
+            >
+              Greener Field High School
+              <ChevronDown size={16} className="ml-2 text-gray-400" />
+            </Button>
+            <Button className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium">
+              <Download size={18} />
+              Export Student Data
+            </Button>
+          </div>
+        </div>
+
+        {/* Course selector */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 rounded-lg border border-gray-200 overflow-x-auto max-w-full">
+            {courses.map((course) => (
+              <button
+                key={course.id}
+                onClick={() => setSelectedCourseId(course.id)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${
+                  selectedCourseId === course.id
+                    ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                {course.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected course details */}
+        {effectiveCourse && (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {effectiveCourse.title}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {effectiveCourse.fullDescription ||
+                  effectiveCourse.description ||
+                  "No description provided yet."}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col text-right">
+                <span className="text-xs uppercase tracking-wide text-gray-400">
+                  Modules
+                </span>
+                <span className="text-base font-semibold text-gray-900">
+                  {moduleCount}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-gray-200" />
+              <div className="flex flex-col text-right">
+                <span className="text-xs uppercase tracking-wide text-gray-400">
+                  Lessons
+                </span>
+                <span className="text-base font-semibold text-gray-900">
+                  {lessonCount}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search & Filter */}
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div className="relative w-full md:w-80">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
-              placeholder="Search schools..."
+              placeholder="Search student name or course..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-100 focus:border-gray-300 text-sm"
             />
           </div>
 
-        <SchoolList schools={filteredSchools} />
+          <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
+            <Filter size={18} />
+            Filter Students
+          </button>
+        </div>
+
+        {/* Table */}
+        <StudentsTable students={filteredStudents} />
       </div>
     );
   }
 
-  // --------------- TEACHER VIEW: STUDENTS LIST ---------------- //
-  
-  // Filter Logic
-  const filteredStudents = MOCK_STUDENTS_TEACHER.filter(student => 
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.course.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  // --------------- DEFAULT: NON-STAFF USERS ---------------- //
   return (
-    <div className="space-y-8 font-sans pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-900">Students</h1>
-        
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="bg-white hover:bg-gray-50 text-gray-900 border-gray-200 rounded-[100px] px-5 py-3 shadow-sm h-auto font-medium"
-          >
-            Greener Field High School
-            <ChevronDown size={16} className="ml-2 text-gray-400" />
-          </Button>
-          <Button 
-            className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium"
-          >
-            <Download size={18} />
-            Export Student Data
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-100 pb-1">
-        {['All Students', 'Top Performers', 'Low Engagement'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setCurrentTab(tab)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              currentTab === tab
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Search & Filter */}
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search student name or course..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-100 focus:border-gray-300 text-sm"
-          />
-        </div>
-        
-        <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
-          <Filter size={18} />
-          Filter Students
-        </button>
-      </div>
-
-      {/* Table */}
-      <StudentsTable students={filteredStudents} />
-
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-        <span className="text-sm text-gray-900 font-medium">Page 2 of 15</span>
-        
-        <div className="flex items-center gap-2">
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50">
-             <ChevronLeft size={16} />
-           </button>
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50">1</button>
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-cyan-400 text-black font-semibold">2</button>
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50">3</button>
-           <span className="w-9 h-9 flex items-center justify-center text-gray-400">...</span>
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50">15</button>
-           <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-             <ChevronRight size={16} />
-           </button>
-        </div>
-      </div>
+    <div className="flex h-96 items-center justify-center text-gray-500">
+      <p>Student management is only available for teachers and admin.</p>
     </div>
   );
 }

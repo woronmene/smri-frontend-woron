@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { mockUsers } from "@/mock/users";
 
-const CORRECT_OTP = "11111";
+const USER_SERVICE_URL =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
 
 export async function POST(req) {
-  const { email, otp } = await req.json();
+  const { email, otp, type } = await req.json();
 
   if (!email || !otp) {
     return NextResponse.json(
@@ -13,21 +15,76 @@ export async function POST(req) {
     );
   }
 
-  if (otp !== CORRECT_OTP) {
-    return NextResponse.json({ message: "Invalid OTP" }, { status: 400 });
+  const accountType = String(type || "").toLowerCase();
+
+  try {
+    // Organization → verify school OTP
+    if (accountType === "organization") {
+      const res = await fetch(`${USER_SERVICE_URL}/schools/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return NextResponse.json(
+          {
+            message:
+              data.detail ||
+              data.message ||
+              "Failed to verify organization OTP",
+          },
+          { status: res.status }
+        );
+      }
+
+      return NextResponse.json({
+        status: "success",
+        message: "Account verified successfully",
+        school: data.school || data,
+        type: "organization",
+      });
+    }
+
+    // Students/teachers → verify user OTP
+    const res = await fetch(`${USER_SERVICE_URL}/users/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        otp,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return NextResponse.json(
+        { message: data.detail || data.message || "Failed to verify OTP" },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      status: "success",
+      message: "Account verified successfully",
+      user: data.user || data,
+      type: accountType || "user",
+    });
+  } catch (err) {
+    console.error("Error calling user service verify-otp:", err);
+    return NextResponse.json(
+      { message: "Unable to reach user service" },
+      { status: 502 }
+    );
   }
-
-  const user = mockUsers.find((u) => u.email === email);
-
-  if (!user) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
-  }
-
-  user.verified = true;
-
-  return NextResponse.json({
-    status: "success",
-    message: "Account verified successfully",
-    user,
-  });
 }

@@ -32,15 +32,33 @@ const signinSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+import { toast } from "sonner";
+
+// ... (schema remains)
+
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+const accountRoleData = [
+  { key: "Student", value: "student" },
+  { key: "Teacher", value: "teacher" },
+  { key: "Organization", value: "organization" },
+];
+
 export default function SignInForm() {
   const router = useRouter();
   const auth = useContext(AuthContext);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Error state can be mostly replaced by toast, but keeping for inline if needed
   const [error, setError] = useState("");
 
   const login = useLogin();
+
+  // Default to "student"
+  const [accountRole, setAccountRole] = useState("student");
 
   const form = useForm({
     resolver: zodResolver(signinSchema),
@@ -54,20 +72,74 @@ export default function SignInForm() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const result = await login.mutateAsync(data);
+      // Map 'student'/'teacher' to 'individual' if backend only distinguishes user vs school
+      // Or pass exact role. Previous logic was "individual" vs "organization".
+      // Let's assume the auth hook or backend can handle "student"/"teacher" as user login, 
+      // or we manually map it here to be safe and consistent with previous behavior.
+      // Previous behavior: loginType = "individual" | "organization".
+      
+      let typeToSend = "individual";
+      if (accountRole === "organization") {
+          typeToSend = "organization";
+      } else {
+          // Both student and teacher are "individual" users for login endpoint purpose
+          typeToSend = "individual";
+      }
+
+      const result = await login.mutateAsync({ ...data, type: typeToSend });
       if (result?.status === 'success' && result?.token) {
-        auth.login(result.user, result.token);
+        toast.success("Signed in successfully");
+        auth.login(result.user, result.token, result.accountType || "user");
         router.push("/dashboard");
       }
     } catch (err) {
       console.error(err);
-      // login.error is handled by the hook usually, but we can set local error if needed
+      toast.error("Sign in failed", {
+         description: err.message || "Invalid credentials",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <div className="w-full">
+      {/* Account Type Toggle (Consistent with SignUp) */}
+      <div className="flex flex-col items-start gap-2 mb-6">
+          <Label className="text-sm font-medium">Account Role</Label>
+          <ToggleGroup
+            type="single"
+            value={accountRole}
+            onValueChange={(val) => val && setAccountRole(val)}
+            className="flex gap-3 justify-between items-center w-full"
+          >
+            {accountRoleData.map((item) => (
+              <ToggleGroupItem
+                key={item.value}
+                value={item.value}
+                className={cn(
+                  "px-4 sm:px-10 min-h-12 border-2 rounded-[12px] font-medium flex-1",
+                  accountRole === item.value &&
+                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25"
+                )}
+              >
+                <Image
+                  src={
+                    accountRole === item.value
+                      ? "/account_role_selected.svg"
+                      : "/account_role_unselected.svg"
+                  }
+                  alt="role_icon"
+                  width={15}
+                  height={15}
+                  className="h-auto w-auto mr-2"
+                />
+                {item.key}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+      </div>
+
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full flex-1">
         {/* Email */}
@@ -192,5 +264,6 @@ export default function SignInForm() {
         )}
       </form>
     </Form>
+    </div>
   );
 }

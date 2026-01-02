@@ -13,8 +13,8 @@ export default function Page() {
         <nav className="flex-1 flex justify-between items-center absolute top-6 left-10 right-0 bg-transparent">
           {/* Logo */}
           <Image
-            src="/SMRI_logo.svg"
-            alt="SMRI logo"
+            src="/smri_logo.svg"
+            alt="smri logo"
             width={160}
             height={50}
             className="h-auto w-auto"
@@ -54,31 +54,7 @@ export default function Page() {
                 <SignInForm />
               </div>
 
-              {/* Divider */}
-              <div className="flex items-center mb-8">
-                <div className="grow border-t border-gray-300 dark:border-gray-600"></div>
-                <span className="mx-4 text-sm text-gray-500 dark:text-gray-400">
-                  Or
-                </span>
-                <div className="grow border-t border-gray-300 dark:border-gray-600"></div>
-              </div>
 
-              {/* Sign in with google */}
-              <div className="mb-8">
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-center gap-3 font-semibold text-[16px] cursor-pointer min-h-14 px-4 border border-[#E5E5E5] rounded-full"
-                  type="button"
-                >
-                  <Image
-                    src="/google_logo.svg"
-                    alt="google_logo.svg"
-                    width={24}
-                    height={24}
-                  />
-                  <span className="block">Sign In with Google</span>
-                </Button>
-              </div>
 
               {/* Sign up link */}
               <div className="flex justify-center items-center gap-2 text-[16px]">
@@ -105,7 +81,6 @@ export default function Page() {
     </div>
   );
 }
-
 
 // Email: admin@smri.com
 // Password: password123

@@ -15,8 +15,8 @@ const Sidebar = ({ className, onNavigate }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const isTeacher = user?.role === 'teacher' || user?.email?.includes('teacher');
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
+  const isTeacher = user?.role === 'teacher' || user?.role === 'school_admin' || user?.role === 'smri_admin' || user?.email?.includes('teacher');
+  const isAdmin = user?.role === 'admin' || user?.role === 'school_admin' || user?.role === 'smri_admin' || user?.email?.includes('admin');
   const handleNavigate = onNavigate || (() => {});
 
   // Close dropdown when clicking outside
@@ -51,6 +51,12 @@ const Sidebar = ({ className, onNavigate }) => {
        href: '/dashboard/students',
        icon: '/students_sidemenu_icon.svg',
        show: isTeacher || isAdmin,
+    },
+    {
+       name: 'Teachers',
+       href: '/dashboard/teachers',
+       icon: '/teachers_sidemenu_icon.svg', // Assuming this icon exists or will default
+       show: user?.role === 'school_admin',
     },
     {
         name: 'Analytics',

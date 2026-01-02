@@ -1,27 +1,45 @@
 "use client";
 
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
+import { updateUserProfile } from "@/lib/user-api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { user } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState("personal");
+  const queryClient = useQueryClient();
+
+  const isOrgAdmin = (user?.role || "").toLowerCase() === "school_admin";
+  const {
+    data: school,
+    isLoading: schoolLoading,
+    error: schoolError,
+  } = useGetSchool(isOrgAdmin);
 
   const initialPersonalValues = useMemo(
     () => ({
-      fullName: user?.fullName || "",
+      firstName: user?.first_name || "",
+      lastName: user?.last_name || "",
       email: user?.email || "",
-      school: "Middle High School",
+      school: school?.name || "",
+      // phone & dob removed from UI but kept in state if needed or we can clean up
       phone: "",
       dob: "",
     }),
-    [user]
+    [user, school]
   );
+  
+  // Update form when user/school data loads
+  useEffect(() => {
+     setPersonalForm(initialPersonalValues);
+  }, [initialPersonalValues]);
 
   const [personalForm, setPersonalForm] = useState(initialPersonalValues);
 
@@ -29,6 +47,21 @@ export default function SettingsPage() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: updateUserProfile,
+    onSuccess: () => {
+      toast.success("Profile Updated", {
+        description: "Your personal information has been saved.",
+      });
+      queryClient.invalidateQueries(["me"]); // Refresh user data
+    },
+    onError: (error) => {
+      toast.error("Update Failed", {
+        description: error.message || "Could not update profile.",
+      });
+    },
   });
 
   const handlePersonalChange = (e) => {
@@ -50,11 +83,18 @@ export default function SettingsPage() {
     });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    // TODO: Wire up to profile update API when available
-    // For now this is a presentational form that matches the design.
-    console.log("Save settings clicked", { personalForm, passwordForm });
+    if (activeTab === "personal") {
+        updateProfileMutation.mutate({
+            first_name: personalForm.firstName,
+            last_name: personalForm.lastName,
+            // phone/dob ignored by backend
+        });
+    } else {
+        // Password update logic (requires separate implementation if endpoints differ)
+        console.log("Password update not explicitly requested yet");
+    }
   };
 
   return (
@@ -71,14 +111,14 @@ export default function SettingsPage() {
           <Button
             type="button"
             variant="outline"
-            className="border-gray-300 w-full sm:w-auto"
+            className="border-gray-300 w-full sm:w-auto rounded-[999px]"
             onClick={handleCancel}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="bg-cyan-500 hover:bg-cyan-600 text-white w-full sm:w-auto"
+            className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer rounded-[999px] px-4 sm:px-5 py-2.5 sm:py-3 text-black w-full sm:w-auto"
             onClick={handleSave}
           >
             Save Changes
@@ -148,6 +188,10 @@ export default function SettingsPage() {
               values={personalForm}
               onChange={handlePersonalChange}
               user={user}
+              school={school}
+              isOrgAdmin={isOrgAdmin}
+              schoolLoading={schoolLoading}
+              schoolError={schoolError}
             />
           ) : (
             <PasswordForm
@@ -161,7 +205,15 @@ export default function SettingsPage() {
   );
 }
 
-function PersonalInfoForm({ values, onChange, user }) {
+function PersonalInfoForm({
+  values,
+  onChange,
+  user,
+  school,
+  isOrgAdmin,
+  schoolLoading,
+  schoolError,
+}) {
   return (
     <div className="max-w-3xl">
       <div className="mb-8 pb-6 border-b border-gray-100">
@@ -207,20 +259,28 @@ function PersonalInfoForm({ values, onChange, user }) {
           </div>
         </div>
 
-        {/* Full name */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-            Full Name
-          </label>
-          <div className="flex-1">
-            <Input
-              name="fullName"
-              value={values.fullName}
-              onChange={onChange}
-              placeholder="Johny Jackson"
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-            />
-          </div>
+        {/* First & Last Name */}
+        <div className="flex flex-col md:flex-row gap-6 pb-8 border-b border-gray-100">
+           <div className="flex-1">
+              <label className="block text-gray-500 font-medium text-sm mb-2">First Name</label>
+              <Input
+                name="firstName"
+                value={values.firstName}
+                onChange={onChange}
+                placeholder="Johny"
+                className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
+              />
+           </div>
+           <div className="flex-1">
+              <label className="block text-gray-500 font-medium text-sm mb-2">Last Name</label>
+              <Input
+                name="lastName"
+                value={values.lastName}
+                onChange={onChange}
+                placeholder="Jackson"
+                className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
+              />
+           </div>
         </div>
 
         {/* Email */}
@@ -240,50 +300,37 @@ function PersonalInfoForm({ values, onChange, user }) {
           </div>
         </div>
 
-        {/* School information */}
+        {/* School / Organization information */}
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
           <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-            School Information
+            {isOrgAdmin ? "Organization" : "School"} Information
           </label>
-          <div className="flex-1">
-            <p className="text-gray-900 text-base">{values.school}</p>
+          <div className="flex-1 space-y-2">
+            <p className="text-gray-900 text-base">
+              {values.school || (isOrgAdmin ? school?.name : "") || "—"}
+            </p>
+            {isOrgAdmin && (
+              <div className="mt-1">
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Invite code for teachers & students
+                </p>
+                {schoolLoading ? (
+                  <p className="text-gray-400 text-sm">Loading invite code...</p>
+                ) : schoolError ? (
+                  <p className="text-red-500 text-sm">
+                    Could not load invite code
+                  </p>
+                ) : (
+                  <p className="font-mono text-base text-gray-900 bg-gray-100 inline-block px-3 py-1 rounded-lg">
+                    {school?.invite_code || "—"}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Phone number */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-            Phone number
-          </label>
-          <div className="flex-1">
-            <Input
-              name="phone"
-              value={values.phone}
-              onChange={onChange}
-              placeholder="+1 (809) 561-9072"
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-            />
-          </div>
-        </div>
 
-        {/* Date of birth */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-2">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-            Date of birth
-          </label>
-          <div className="flex-1">
-            <div className="relative">
-              <Input
-                name="dob"
-                value={values.dob}
-                onChange={onChange}
-                placeholder="10 February 1996"
-                className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base pr-11 focus-visible:ring-cyan-500"
-              />
-              <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

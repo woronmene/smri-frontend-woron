@@ -24,6 +24,7 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { Label } from "./ui/label";
 import { cn } from "@/lib/utils";
 import { useRegister } from "@/hooks/auth-api";
+import { toast } from "sonner";
 
 const accountRoleData = [
   { key: "Student", value: "student" },
@@ -31,29 +32,43 @@ const accountRoleData = [
   { key: "Organization", value: "organization" },
 ];
 
-const signupSchema = z.object({
-  accountRole: z
-    .string()
-    .min(2, "Accounty role is required")
-    .max(30, "Accounty role is too long"),
-  inviteCode: z.string(),
-  fullName: z
-    .string()
-    .min(2, "Full name is required")
-    .max(30, "Full name is too long"),
-  email: z
-    .email("Invalid email address")
-    .max(100, "Email is too long")
-    .min(3, "Email is required"),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Must contain at least one number"),
-  agreeToPrivacyPolicy: z.boolean().refine((val) => val === true, {
-    message: "You must agree to the terms",
-  }),
-});
+const signupSchema = z
+  .object({
+    accountRole: z
+      .string()
+      .min(2, "Account role is required")
+      .max(30, "Account role is too long"),
+    inviteCode: z.string().optional(),
+    firstName: z
+      .string()
+      .min(2, "First name is required")
+      .max(50, "First name is too long"),
+    lastName: z
+      .string()
+      .min(2, "Last name is required")
+      .max(50, "Last name is too long"),
+    email: z
+      .email("Invalid email address")
+      .max(100, "Email is too long")
+      .min(3, "Email is required"),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters")
+      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Must contain at least one number"),
+    agreeToPrivacyPolicy: z.boolean().refine((val) => val === true, {
+      message: "You must agree to the terms",
+    }),
+  })
+  .superRefine((val, ctx) => {
+    if (val.accountRole !== "organization" && !val.inviteCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["inviteCode"],
+        message: "Invite code is required for students and teachers",
+      });
+    }
+  });
 
 export default function SignUpForm() {
   const router = useRouter();
@@ -68,7 +83,8 @@ export default function SignUpForm() {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       accountRole: accountRoleData[0].value,
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       inviteCode: "",
       password: "",
@@ -80,19 +96,39 @@ export default function SignUpForm() {
     form.watch("accountRole");
   }, [form]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = (data) => {
     const payload = {
-      first_name: data.fullName,
-      last_name: data.fullName,
+      first_name: data.firstName,
+      last_name: data.lastName,
       email: data.email,
       password: data.password,
-      invite_code: "54321", // Default to a likely valid one or placeholder
+      invite_code: data.inviteCode,
+      // Keep the UI role so the API route can decide between /users and /schools
       type: data.accountRole,
     };
 
-    register.mutate(payload);
-
-    router.push("/auth/verify-email?email=" + data.email);
+    setLoading(true);
+    register.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Account created successfully", {
+          description: "Please check your email to verify your account.",
+        });
+        router.push(
+          `/auth/verify-email?email=${encodeURIComponent(
+            data.email
+          )}&type=${encodeURIComponent(data.accountRole)}`
+        );
+      },
+      onError: (err) => {
+        toast.error("Registration failed", {
+          description: err.message || "Something went wrong.",
+        });
+        setLoading(false);
+      },
+      onSettled: () => {
+        setLoading(false);
+      }
+    });
   };
 
   console.log(register.data);
@@ -102,7 +138,7 @@ export default function SignUpForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full flex-1">
         {/* Accounty role for decktop*/}
         <div className="md:flex flex-col items-start gap-2 mb-4 hidden">
-          <Label className="text-sm font-medium">Accounty Role</Label>
+          <Label className="text-sm font-medium">Account Role</Label>
           <ToggleGroup
             type="single"
             value={form.getValues("accountRole")}
@@ -136,35 +172,65 @@ export default function SignUpForm() {
           </ToggleGroup>
         </div>
 
-        {/* Full name */}
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem className="mb-4">
-              <FormLabel>Full name</FormLabel>
-              <FormControl>
-                <div className="relative h-auto w-auto">
-                  <span className="absolute top-1/2 -translate-y-1/2 left-4">
-                    <Image
-                      src="/user_icon.svg"
-                      alt="user_icon.svg"
-                      width={15}
-                      height={15}
-                      className="h-auto w-auto"
+        {/* First & Last Name */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <div className="relative h-auto w-auto">
+                    <span className="absolute top-1/2 -translate-y-1/2 left-4">
+                      <Image
+                        src="/user_icon.svg"
+                        alt="user_icon.svg"
+                        width={15}
+                        height={15}
+                        className="h-auto w-auto"
+                      />
+                    </span>
+                    <Input
+                      placeholder="Johny"
+                      {...field}
+                      className="px-10 min-h-12"
                     />
-                  </span>
-                  <Input
-                    placeholder="Johny Jackson"
-                    {...field}
-                    className="px-10 min-h-12"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <div className="relative h-auto w-auto">
+                    <span className="absolute top-1/2 -translate-y-1/2 left-4">
+                      <Image
+                        src="/user_icon.svg"
+                        alt="user_icon.svg"
+                        width={15}
+                        height={15}
+                        className="h-auto w-auto"
+                      />
+                    </span>
+                    <Input
+                      placeholder="Jackson"
+                      {...field}
+                      className="px-10 min-h-12"
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Email */}
         <FormField
@@ -197,35 +263,37 @@ export default function SignUpForm() {
           )}
         />
 
-        {/* Invite code */}
-        <FormField
-          control={form.control}
-          name="inviteCode"
-          render={({ field }) => (
-            <FormItem className="mb-4">
-              <FormLabel>Invite code</FormLabel>
-              <FormControl>
-                <div className="relative h-auto w-auto">
-                  <span className="absolute top-1/2 -translate-y-1/2 left-4">
-                    <Image
-                      src="/key_icon.svg"
-                      alt="key_icon.svg"
-                      width={15}
-                      height={15}
-                      className="h-auto w-auto"
+        {/* Invite code – required for student/teacher, hidden for organization */}
+        {form.getValues("accountRole") !== "organization" && (
+          <FormField
+            control={form.control}
+            name="inviteCode"
+            render={({ field }) => (
+              <FormItem className="mb-4">
+                <FormLabel>Invite code</FormLabel>
+                <FormControl>
+                  <div className="relative h-auto w-auto">
+                    <span className="absolute top-1/2 -translate-y-1/2 left-4">
+                      <Image
+                        src="/key_icon.svg"
+                        alt="key_icon.svg"
+                        width={15}
+                        height={15}
+                        className="h-auto w-auto"
+                      />
+                    </span>
+                    <Input
+                      placeholder="45756"
+                      {...field}
+                      className="px-10 min-h-12"
                     />
-                  </span>
-                  <Input
-                    placeholder="45756"
-                    {...field}
-                    className="px-10 min-h-12"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Password */}
         <FormField

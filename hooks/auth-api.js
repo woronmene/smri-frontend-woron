@@ -2,14 +2,16 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-// Helper to simplify fetch
+// Helper to simplify fetch to Next.js API routes (JSON by default)
 async function apiFetch(url, options = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") : null;
-  
+  // Attach auth token from localStorage when running in the browser
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+
   const headers = {
     "Content-Type": "application/json",
-    ...(token && { "Authorization": `Bearer ${token}` }),
-    ...options.headers,
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(options.headers || {}),
   };
 
   const res = await fetch(url, {
@@ -17,7 +19,7 @@ async function apiFetch(url, options = {}) {
     headers,
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || "Something went wrong");
 
   return data;
@@ -86,4 +88,14 @@ export function useGetProfile(enabled = true) {
     retry: 1,
   });
 }
+
+export function useGetSchool(enabled = true) {
+  return useQuery({
+    queryKey: ["school"],
+    queryFn: () => apiFetch("/api/auth/school"),
+    enabled,
+    retry: 1,
+  });
+}
+
 

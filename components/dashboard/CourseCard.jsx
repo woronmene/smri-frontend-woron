@@ -6,8 +6,11 @@ import { useState } from 'react';
 const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
   const [showMenu, setShowMenu] = useState(false);
 
+  // Normalize status casing from backend (e.g. 'Draft' vs 'draft')
+  const normalizedStatus = (course.status || '').toLowerCase();
+
   // Determine link destination
-  const href = (isAdmin && course.status === 'draft') 
+  const href = (isAdmin && normalizedStatus === 'draft') 
     ? `/dashboard/courses/create?courseId=${course.id}` 
     : `/dashboard/courses/${course.id}`;
 
@@ -31,13 +34,13 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
   const iconColorClass = getColor(course.title || 'Course');
   const progress = course.progress || 0;
   
-  // Status Logic
+  // Status Logic (use normalized status)
   let statusColor = 'bg-blue-50 text-blue-700';
   let statusText = 'In Progress';
-  if (course.status === 'completed' || (isStudent && progress === 100)) {
+  if (normalizedStatus === 'completed' || (isStudent && progress === 100)) {
       statusColor = 'bg-emerald-50 text-emerald-700';
       statusText = 'Completed';
-  } else if (course.status === 'draft') {
+  } else if (normalizedStatus === 'draft') {
       statusColor = 'bg-gray-100 text-gray-700';
       statusText = 'Draft';
   }
@@ -119,14 +122,14 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
                 <>
                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
                         <span>{statusText}</span>
-                        {course.status !== 'draft' && <span>• {progress}%</span>}
+                        {normalizedStatus !== 'draft' && <span>• {progress}%</span>}
                     </div>
 
                     {/* Progress Bar (Visual bottom border effect) */}
-                    {course.status !== 'draft' && (
+                    {normalizedStatus !== 'draft' && (
                         <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                             <div 
-                                className={`h-full rounded-full transition-all duration-500 ${course.status === 'completed' ? 'bg-emerald-500' : 'bg-orange-400'}`}
+                                className={`h-full rounded-full transition-all duration-500 ${normalizedStatus === 'completed' ? 'bg-emerald-500' : 'bg-orange-400'}`}
                                 style={{ width: `${Math.max(progress, 5)}%` }}
                             />
                         </div>
@@ -136,9 +139,9 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
                  // ADMIN/TEACHER VIEW
                  <div className="flex justify-between items-center border-t border-gray-100 pt-4">
                      <span className={`text-xs px-2 py-1 rounded font-medium ${
-                         course.status === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-cyan-50 text-cyan-700'
+                         normalizedStatus === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-cyan-50 text-cyan-700'
                      }`}>
-                         {course.status === 'draft' ? 'Draft' : 'Published'}
+                         {normalizedStatus === 'draft' ? 'Draft' : 'Published'}
                      </span>
                      {/* View Course removed as per design */}
                  </div>

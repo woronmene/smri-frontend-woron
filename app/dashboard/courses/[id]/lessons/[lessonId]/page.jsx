@@ -1,20 +1,22 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
-import { Loader2, ChevronLeft, ChevronRight, CheckCircle, Play, FileText, Clock } from 'lucide-react';
-import Link from 'next/link';
-import { useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
-import LessonContentRenderer from '@/components/dashboard/LessonContentRenderer';
-
-const fetchCourse = async (id) => {
-  const res = await fetch(`/api/courses/${id}`);
-  if (!res.ok) {
-    throw new Error('Network response was not ok');
-  }
-  return res.json();
-};
+import { useQuery } from "@tanstack/react-query";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Play,
+  FileText,
+  Clock,
+} from "lucide-react";
+import Link from "next/link";
+import { useContext, useMemo } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import LessonContentRenderer from "@/components/dashboard/LessonContentRenderer";
+import { getCourseById } from "@/lib/cms-api";
+import { markLessonComplete } from "@/lib/analytics-api";
 
 export default function LessonPage() {
   const params = useParams();
@@ -22,14 +24,51 @@ export default function LessonPage() {
   const { id: courseId, lessonId } = params;
   const { user } = useContext(AuthContext);
 
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
-  const isTeacher = user?.role === 'teacher' || user?.email?.includes('teacher');
+  const isAdmin =
+    user?.role === "admin" || user?.role === "smri_admin" || user?.email?.toLowerCase().includes("admin");
+  const isTeacher =
+    user?.role === "teacher" || user?.role === "school_admin" || user?.email?.toLowerCase().includes("teacher");
 
-  const { data: course, isLoading, error } = useQuery({
-    queryKey: ['course', courseId],
-    queryFn: () => fetchCourse(courseId),
+  const {
+    data: course,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: () => getCourseById(courseId),
     enabled: !!courseId,
   });
+  // Flatten lessons and locate current/prev/next with module context.
+  // NOTE: This hook must run on every render (even while loading) to keep hook order stable.
+  const { currentLesson, prevLesson, nextLesson } = useMemo(() => {
+    if (!course?.modules) {
+      return { currentLesson: null, prevLesson: null, nextLesson: null };
+    }
+
+    const allLessons = [];
+    course.modules.forEach((mod, mIdx) => {
+      (mod.lessons || []).forEach((les, lIdx) => {
+        allLessons.push({
+          ...les,
+          moduleId: mod.id,
+          moduleTitle: mod.title,
+          moduleIndex: mIdx + 1,
+          lessonIndex: lIdx + 1,
+        });
+      });
+    });
+
+    const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+    if (currentIndex === -1) {
+      return { currentLesson: null, prevLesson: null, nextLesson: null };
+    }
+
+    return {
+      currentLesson: allLessons[currentIndex],
+      prevLesson: allLessons[currentIndex - 1],
+      nextLesson: allLessons[currentIndex + 1],
+    };
+  }, [course, lessonId]);
 
   if (isLoading) {
     return (
@@ -43,7 +82,7 @@ export default function LessonPage() {
     return (
       <div className="text-center py-12">
         <p className="text-red-500">Error loading lesson.</p>
-        <button 
+        <button
           onClick={() => router.push(`/dashboard/courses/${courseId}`)}
           className="mt-4 text-cyan-600 hover:underline"
         >
@@ -53,48 +92,49 @@ export default function LessonPage() {
     );
   }
 
-  // Find current lesson and navigation logic
-  let currentLesson = null;
-  let prevLesson = null;
-  let nextLesson = null;
-  let currentModule = null;
-  
-  // Need to traverse modules to identify context
-  let lessonIndex = 0;
-  let totalLessons = 0;
-  
-  // Flattening for easy nav, but keeping module info might be useful
-  const allLessons = [];
-  course.modules.forEach((mod, mIdx) => {
-      mod.lessons.forEach((les, lIdx) => {
-          allLessons.push({
-              ...les,
-              moduleTitle: mod.title,
-              moduleIndex: mIdx + 1,
-              lessonIndex: lIdx + 1
-          });
-      });
-  });
-
-  const currentIndex = allLessons.findIndex(l => l.id === lessonId);
-  
-  if (currentIndex !== -1) {
-    currentLesson = allLessons[currentIndex];
-    prevLesson = allLessons[currentIndex - 1];
-    nextLesson = allLessons[currentIndex + 1];
-  }
-
   if (!currentLesson) {
     return <div className="p-8">Lesson not found</div>;
   }
+
+  const handleMarkAsDone = async () => {
+    try {
+      const userId =
+        user?.user_id || user?.id || user?.userId || "mock-student"; // fallback while auth integration is in progress
+
+      const schoolId = user?.school_id || null;
+
+      await markLessonComplete({
+        userId,
+        schoolId,
+        courseId,
+        moduleId: currentLesson.moduleId,
+        lessonId,
+      });
+
+      // For now we just log; later you can show a toast or update UI state
+      console.log("Marked lesson as complete in analytics");
+    } catch (err) {
+      console.error("Failed to mark lesson complete:", err);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-6 pb-20 font-sans">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-8 text-sm text-gray-500 mb-8 pt-4">
-        <Link href="/dashboard" className="hover:text-gray-900 transition-colors">My Courses</Link>
+        <Link
+          href="/dashboard"
+          className="hover:text-gray-900 transition-colors"
+        >
+          My Courses
+        </Link>
         {/* <span>/</span> */}
-        <Link href={`/dashboard/courses/${courseId}`} className="hover:text-gray-900 transition-colors">{course.title}</Link>
+        <Link
+          href={`/dashboard/courses/${courseId}`}
+          className="hover:text-gray-900 transition-colors"
+        >
+          {course.title}
+        </Link>
         {/* <span>/</span> */}
         <span className="text-gray-900 font-medium">Modules</span>
       </nav>
@@ -102,41 +142,43 @@ export default function LessonPage() {
       {/* Header Info */}
       <div className="mb-8">
         <div className="text-xs font-semibold text-gray-500 tracking-wide uppercase mb-3 flex items-center gap-2">
-            <span>{course.title}</span>
-            <span>•</span>
-            <span>Module {currentLesson.moduleIndex}</span>
-            <span>•</span>
-            <span>Lesson {currentLesson.lessonIndex}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1"><Clock size={12} /> 5 min read / watch</span>
+          <span>{course.title}</span>
+          <span>•</span>
+          <span>Module {currentLesson.moduleIndex}</span>
+          <span>•</span>
+          <span>Lesson {currentLesson.lessonIndex}</span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <Clock size={12} /> 5 min read / watch
+          </span>
         </div>
-        
+
         <h1 className="text-[24px] md:text-[32px] font-bold text-gray-900 mb-4 tracking-tight leading-tight">
           {currentLesson.title}
         </h1>
-        
+
         <p className="text-[14px] text-[#737373] max-w-3xl leading-relaxed">
-          {currentLesson.introduction || "Get an overview of key concepts, history, and real-world applications related to this topic."}
+          {currentLesson.introduction ||
+            "Get an overview of key concepts, history, and real-world applications related to this topic."}
         </p>
       </div>
 
       {/* Main Content (Renderer Handles Video/Text) */}
       <div className="mb-12">
-         {/* If we had a dedicated video URL field, we might render a featured player here. 
+        {/* If we had a dedicated video URL field, we might render a featured player here. 
              Assuming the renderer handles it or we manually inject for demo if content is empty/structured. 
              For now, relying on content renderer but wrapping it cleanly. 
          */}
-         <article className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-img:rounded-2xl prose-img:shadow-sm">
-            <LessonContentRenderer content={currentLesson.content || ''} />
-         </article>
+        <article className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-img:rounded-2xl prose-img:shadow-sm">
+          <LessonContentRenderer content={currentLesson.content || ""} />
+        </article>
       </div>
 
       {/* Footer Navigation */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-16 pt-8 border-t border-gray-100">
-        
         {/* Previous Button */}
         <div>
-           {prevLesson ? (
+          {prevLesson ? (
             <Link
               href={`/dashboard/courses/${courseId}/lessons/${prevLesson.id}`}
               className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:border-gray-900 transition-all bg-white"
@@ -153,25 +195,27 @@ export default function LessonPage() {
         <div className="flex items-center gap-3">
           {/* Mark as Done */}
           {!isAdmin && !isTeacher && (
-            <button className="flex items-center gap-2 bg-[#4ADE80] hover:bg-green-500 text-black px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-colors">
-               <span>Mark as done</span>
+            <button
+              onClick={handleMarkAsDone}
+              className="flex items-center gap-2 bg-[#4ADE80] hover:bg-green-500 text-black px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-colors"
+            >
+              <span>Mark as done</span>
             </button>
           )}
 
           {/* Next Button */}
           {nextLesson ? (
-             <Link
-               href={`/dashboard/courses/${courseId}/lessons/${nextLesson.id}`}
-               className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:border-gray-900 transition-all bg-white"
-             >
-               Next
-               <ChevronRight size={16} />
-             </Link>
+            <Link
+              href={`/dashboard/courses/${courseId}/lessons/${nextLesson.id}`}
+              className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:border-gray-900 transition-all bg-white"
+            >
+              Next
+              <ChevronRight size={16} />
+            </Link>
           ) : (
-             <div className="w-[88px]"></div> // approximate spacer for alignment if needed
+            <div className="w-[88px]"></div> // approximate spacer for alignment if needed
           )}
         </div>
-
       </div>
     </div>
   );

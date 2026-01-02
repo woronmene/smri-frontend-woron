@@ -1,52 +1,111 @@
 import { NextResponse } from "next/server";
-import { mockUsers } from "@/mock/users";
-import { validInviteCodes } from "@/mock/inviteCodes";
+
+const USER_SERVICE_URL =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
 
 export async function POST(req) {
   const body = await req.json();
   const { first_name, last_name, email, password, invite_code, type } = body;
 
-  if (
-    !first_name ||
-    !last_name ||
-    !email ||
-    !password ||
-    !invite_code ||
-    !type
-  ) {
+  if (!first_name || !last_name || !email || !password || !type) {
     return NextResponse.json(
-      { message: "All fields are required" },
+      { message: "All required fields are missing" },
       { status: 400 }
     );
   }
 
-  if (!validInviteCodes.includes(invite_code)) {
+  const accountType = String(type || "").toLowerCase();
+
+  try {
+    // Organization → create a school
+    if (accountType === "organization") {
+      const schoolRes = await fetch(`${USER_SERVICE_URL}/schools`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: `${first_name} ${last_name}`.trim(),
+          email,
+          password,
+          student_size: null,
+        }),
+      });
+
+      const schoolData = await schoolRes.json().catch(() => ({}));
+
+      if (!schoolRes.ok) {
+        return NextResponse.json(
+          {
+            message:
+              schoolData.detail ||
+              schoolData.message ||
+              "Failed to register organization",
+          },
+          { status: schoolRes.status }
+        );
+      }
+
+      return NextResponse.json({
+        status: "otp_sent",
+        message: `OTP sent to ${email}`,
+        school: schoolData,
+        type: "organization",
+      });
+    }
+
+    // Students/teachers → create a user
+    if (!invite_code) {
+      return NextResponse.json(
+        { message: "Invite code is required for students and teachers" },
+        { status: 400 }
+      );
+    }
+
+    const role = accountType; // "student" or "teacher"
+
+    const userRes = await fetch(`${USER_SERVICE_URL}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        first_name,
+        last_name,
+        middle_name: null,
+        role,
+        invite_code,
+      }),
+    });
+
+    const userData = await userRes.json().catch(() => ({}));
+
+    if (!userRes.ok) {
+      return NextResponse.json(
+        {
+          message:
+            userData.detail || userData.message || "Failed to register user",
+        },
+        { status: userRes.status }
+      );
+    }
+
+    // Backend sends OTP via "notification" (logged locally). Frontend just needs to move to verify page.
+    return NextResponse.json({
+      status: "otp_sent",
+      message: `OTP sent to ${email}`,
+      user: userData,
+      type: accountType,
+    });
+  } catch (err) {
+    console.error("Error calling user service /users:", err);
     return NextResponse.json(
-      { message: "Invalid invite code" },
-      { status: 400 }
+      { message: "Unable to reach user service" },
+      { status: 502 }
     );
   }
-
-  const userExists = mockUsers.find((u) => u.email === email);
-  if (userExists) {
-    return NextResponse.json(
-      { message: "Email already exists" },
-      { status: 409 }
-    );
-  }
-
-  mockUsers.push({
-    id: `user_${mockUsers.length + 1}`,
-    first_name,
-    last_name,
-    email,
-    password,
-    type,
-    verified: false,
-  });
-
-  return NextResponse.json({
-    status: "otp_sent",
-    message: `OTP sent to ${email}`,
-  });
 }

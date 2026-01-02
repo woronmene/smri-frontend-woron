@@ -31,15 +31,15 @@ export default function Page() {
               Successfully Verified!
             </h1>
             <p className="text-gray-600 text-center text-wrap text-base max-w-[320px] lg:max-w-[480px]">
-              Great job! Your account is now verified. Hop in and start
-              learning.
+              Great job! Your account is now verified. Please sign in to access
+              your dashboard and courses.
             </p>
             <Button
               variant="primary"
               type="submit"
               className="w-full bg-primary min-h-14 px-4 text-[16px] rounded-full font-semibold shadow mt-10 lg:mt-16"
             >
-              <Link href="/auth/sign-in"> Move to courses</Link>
+              <Link href="/auth/sign-in">Go to sign in</Link>
             </Button>
           </div>
         </section>

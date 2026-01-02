@@ -6,14 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import ModuleAccordion from '@/components/dashboard/ModuleAccordion';
 import { AuthContext } from '@/context/AuthContext';
-
-const fetchCourse = async (id) => {
-  const res = await fetch(`/api/courses/${id}`);
-  if (!res.ok) {
-    throw new Error('Network response was not ok');
-  }
-  return res.json();
-};
+import { getCourseById } from '@/lib/cms-api';
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -21,12 +14,12 @@ export default function CourseDetailPage() {
   const { id } = params;
   const { user } = useContext(AuthContext);
 
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
-  const isTeacher = user?.role === 'teacher' || user?.email?.includes('teacher');
+  const isAdmin = user?.role === 'admin' || user?.role === 'smri_admin' || user?.email?.includes('admin');
+  const isTeacher = user?.role === 'teacher' || user?.role === 'school_admin' || user?.email?.includes('teacher');
 
   const { data: course, isLoading, error } = useQuery({
     queryKey: ['course', id],
-    queryFn: () => fetchCourse(id),
+    queryFn: () => getCourseById(id),
     enabled: !!id,
   });
 

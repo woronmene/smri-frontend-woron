@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { useVerifyOtp } from "@/hooks/auth-api";
 
-const optLength = 5;
+const optLength = 6;
 
 const verifyEmailSchema = z.object({
   otp: z.string().min(optLength, `Enter all ${optLength} digits`),
@@ -51,7 +51,7 @@ export default function VerifyEmailForm() {
 
   // Auto fill email
   useEffect(() => {
-     const email = query.get("email");
+    const email = query.get("email");
     if (email) {
       form.setValue("email", email);
     }
@@ -66,11 +66,27 @@ export default function VerifyEmailForm() {
     setResendTimer(60);
   };
 
-  // Verify opt otp
-  const onSubmit = async (data) => {   
-    verify.mutate(data);
+  // Verify OTP
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setError("");
+    try {
+      const type = query.get("type") || "student";
+      await verify.mutateAsync({ ...data, type });
+      router.push("/auth/account-verified");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to verify OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    router.push("/auth/account-verified");
+  const handleAutoSubmit = async (value) => {
+    form.setValue("otp", value);
+    if (form.getValues("email")) {
+      await onSubmit(form.getValues());
+    }
   };
 
 
@@ -92,7 +108,7 @@ export default function VerifyEmailForm() {
                   value={field.value}
                   onChange={(value) => {
                     field.onChange(value);
-                    if (value.length === 6) handleAutoSubmit(value);
+                    if (value.length === optLength) handleAutoSubmit(value);
                   }}
                 >
                   <div className="w-full flex justify-center items-center">
@@ -129,9 +145,9 @@ export default function VerifyEmailForm() {
           )}
         </Button>
 
-        {verify.error && (
+        {(error || verify.error) && (
           <p className="mt-3 text-center w-full text-red-600 text-xs font-medium">
-            Error: {verify.error.message}
+            Error: {error || verify.error?.message}
           </p>
         )}
 
