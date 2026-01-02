@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 const USER_SERVICE_URL =
   process.env.USER_SERVICE_URL ||
   process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
-  "http://localhost:8002";
+  "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
 
 export async function POST(req) {
   try {

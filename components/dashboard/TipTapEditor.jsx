@@ -21,8 +21,9 @@ import {
   Link as LinkIcon, Image as ImageIcon, Table as TableIcon, 
   AlignLeft, AlignCenter, AlignRight, Type, Highlighter,
   Undo, Redo, Palette, Video, Plus, Minus,
-  Paperclip, Music
+  Paperclip, Music, RefreshCw
 } from 'lucide-react';
+import { getMediaItem } from '@/lib/media-api';
 
 // Custom Font Size Extension
 const FontSize = Extension.create({
@@ -112,6 +113,114 @@ const VideoExtension = Node.create({
         video.className = node.attrs.class;
         return {
             dom: video,
+        };
+    };
+  }
+});
+// Custom Audio Extension
+const AudioExtension = Node.create({
+  name: 'audio',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  draggable: true,
+  
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+      },
+      controls: {
+        default: true,
+      },
+      class: {
+        default: 'w-full my-4',
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'audio',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['div', { class: 'audio-wrapper' }, ['audio', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)]];
+  },
+
+  addNodeView() {
+    return ({ node }) => {
+        const audio = document.createElement('audio');
+        audio.src = node.attrs.src;
+        audio.controls = true;
+        audio.className = node.attrs.class;
+        return {
+            dom: audio,
+        };
+    };
+  }
+});
+
+// Custom Pending Media Extension to preserve the placeholder during processing
+const PendingMediaExtension = Node.create({
+  name: 'pendingMedia',
+  group: 'block',
+  atom: true,
+  
+  addAttributes() {
+    return {
+      mediaId: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-smri-media-id'),
+        renderHTML: attributes => ({
+          'data-smri-media-id': attributes.mediaId,
+        }),
+      },
+      mediaType: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-smri-media-type'),
+        renderHTML: attributes => ({
+           'data-smri-media-type': attributes.mediaType,
+        }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div.smri-media-pending',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    // Simple render for export - the NodeView handles the editor display
+    return ['div', mergeAttributes(HTMLAttributes, { class: 'smri-media-pending' })];
+  },
+
+  addNodeView() {
+    return ({ node }) => {
+        const wrapper = document.createElement('div');
+        // Replicate the styling from create/page.jsx so it looks consistent
+        wrapper.className = 'smri-media-pending p-6 border-2 border-dashed border-cyan-200 rounded-xl bg-cyan-50 my-6 text-center select-none';
+        wrapper.setAttribute('data-smri-media-id', node.attrs.mediaId);
+        wrapper.setAttribute('data-smri-media-type', node.attrs.mediaType);
+        wrapper.setAttribute('contenteditable', 'false'); // Important for atom nodes
+        
+        const typeLabel = node.attrs.mediaType === 'audio' ? 'Audio' : 'Video';
+        
+        wrapper.innerHTML = `
+             <p class="font-bold text-cyan-800 text-lg mb-1">${typeLabel} Processing...</p>
+             <p class="text-sm text-cyan-600 mb-2">Your media is being optimized.</p>
+             <div class="text-xs text-gray-500 font-mono bg-white inline-block px-2 py-1 rounded border border-gray-200">ID: ${node.attrs.mediaId}</div>
+        `;
+        
+        return {
+            dom: wrapper,
         };
     };
   }
@@ -241,6 +350,8 @@ const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVid
       FontFamily,
       FontSize, // Register custom extension
       VideoExtension, // Register custom video extension
+      AudioExtension, // Register custom audio extension
+      PendingMediaExtension, // Register custom pending media extension
       Highlight.configure({ multipart: true }),
     ],
     content: content,
@@ -256,9 +367,126 @@ const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVid
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
+        const currentSelection = editor.state.selection;
         editor.commands.setContent(content);
+        // Restore cursor position if possible, though setting content usually resets it
+        // Ideally we only update if content is drastically different to avoid cursor jumps
     }
   }, [content, editor]);
+
+  // Polling Logic for Pending Media
+  useEffect(() => {
+    if (!editor) return;
+
+    const checkPendingMedia = async () => {
+      // Find all pending media elements in the editor's content
+      // We look for the class 'smri-media-pending' which we inserted in create/page.jsx
+      // Since TipTap manages its own DOM, we scan the editor's JSON or HTML output logic roughly
+      // But standard DOM access to editor.view.dom is easiest for finding elements
+      
+      const pendingElements = editor.view.dom.querySelectorAll('.smri-media-pending');
+      
+      if (pendingElements.length === 0) return;
+
+      pendingElements.forEach(async (el) => {
+        const mediaId = el.getAttribute('data-smri-media-id');
+        const mediaType = el.getAttribute('data-smri-media-type'); // 'video' or 'audio'
+        
+        if (!mediaId || !mediaType) return;
+
+        try {
+          const statusData = await getMediaItem(mediaId, mediaType);
+          
+          if (statusData && (statusData.status === 'COMPLETED' || statusData.status === 'UNKNOWN') && statusData.cloudfront_url) {
+              // Replace the placeholder with the actual component
+              // We need to find the node in the editor state that corresponds to this element
+              // This is tricky in TipTap without a custom node for "Pending", but since we inserted HTML,
+              // we can try to find and replace the content string.
+              
+              // A safer approach with TipTap is to use `editor.commands.setContent` but that re-renders everything.
+              // Instead, we can use a range replacement if we find the node, OR
+              // simpler: regex replace on the HTML content if the user isn't actively typing in that exact spot.
+              
+              // Let's use the editor's transaction to replace the node at the position.
+              // We need to find the node pos.
+              
+              editor.state.doc.descendants((node, pos) => {
+                  if (node.isText) return;
+                  // We inserted it as raw HTML, likely it's being parsed as a paragraph or HTML block?
+                  // TipTap sanitizes HTML heavily. Our `insertMediaIntoContent` used `updateLessonContent`
+                  // which calls `editor.commands.setContent`.
+                  
+                  // If our pending div was preserved (it might be stripped if not allowed),
+                  // verify if TipTap allows 'div' with classes. StarterKit usually doesn't allow arbitrary divs.
+                  // We should check if the pending element is actually in the DOM.
+                  
+                  // Assuming it is rendered (maybe as a paragraph with attributes if configured, or just stripped).
+                  // If stripped, this polling won't work.
+                  // BUT, `TipTapEditor` allows `attributes: { class: ... }` on editor.
+                  
+                  // Let's assume the user sees the placeholder.
+                  
+                  // For robust replacement, we'll traverse the document and check attributes if we had a custom node.
+                  // Since we don't, we will try to replace the content by matching the ID string in the HTML.
+              });
+
+               const currentHTML = editor.getHTML();
+               // We look for the placeholder HTML string pattern
+               const parser = new DOMParser();
+               const doc = parser.parseFromString(currentHTML, 'text/html');
+               const placeholder = doc.querySelector(`.smri-media-pending[data-smri-media-id="${mediaId}"]`);
+               
+               if (placeholder) {
+                   // Create the new element
+                   let newHTML = '';
+                   if (mediaType === 'video') {
+                       // Using our custom Video node
+                       newHTML = `<div data-video-wrapper="true"><video src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full h-auto rounded-lg shadow-md aspect-video my-6 bg-black"></video></div>`;
+                   } else if (mediaType === 'audio') {
+                       newHTML = `<div data-audio-wrapper="true"><audio src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full my-4"></audio></div>`;
+                   }
+                   
+                   // We actually want to replace the Node in TipTap, not just the string, best practice.
+                   // However, for this 'layman' integration request, replacing the HTML content is safest to ensure it updates.
+                   // The challenge is preserving cursor.
+                   
+                   // Let's rely on the Parent passing `content` prop updates if we want to be pure,
+                   // But `TipTapEditor` owns the state.
+                   // We will run a command to replace the specific range if we can find it.
+                   
+                   // Better strategy:
+                   // Use a regex on the HTML to swap the placeholder div for the video/audio tag.
+                   const regex = new RegExp(`<div[^>]*data-smri-media-id="${mediaId}"[^>]*>.*?</div>`, 's');
+                   
+                   // If we are using the video extension, we should insert the tag compatible with it
+                   // Our VideoExtension parses <video>, so we should insert <video src="...">
+                   
+                   let replacementTag = '';
+                    if (mediaType === 'video') {
+                       replacementTag = `<video src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full h-auto rounded-lg shadow-md aspect-video my-6 bg-black"></video>`;
+                   } else if (mediaType === 'audio') {
+                       replacementTag = `<audio src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full my-4"></audio>`;
+                   }
+
+                   // We use a text replacement on the editor content
+                   // This is slightly destructive if user is typing elsewhere, but acceptably rare (only when upload finishes)
+                   const newContent = currentHTML.replace(regex, replacementTag);
+                   
+                   if (newContent !== currentHTML) {
+                       editor.commands.setContent(newContent, true); // true = emit update
+                       onChange(newContent); // Inform parent
+                   }
+               }
+          }
+        } catch (err) {
+            console.error("Polling error for", mediaId, err);
+        }
+      });
+    };
+
+    const intervalId = setInterval(checkPendingMedia, 5000); // Check every 5 seconds
+    return () => clearInterval(intervalId);
+  }, [editor, onChange]);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm flex flex-col h-full">

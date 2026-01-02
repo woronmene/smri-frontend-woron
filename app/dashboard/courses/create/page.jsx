@@ -309,12 +309,12 @@ export default function CreateCoursePage() {
         let item = null;
         for (let i = 0; i < 3; i++) {
            item = await getMediaItem(mediaId, 'image');
-           if (item && item.media_url) break;
+           if (item && (item.cloudfront_url || item.media_url)) break;
            await new Promise(r => setTimeout(r, 500));
         }
         
-        if (item && item.media_url) {
-          finalUrl = item.media_url;
+        if (item && (item.cloudfront_url || item.media_url)) {
+          finalUrl = item.cloudfront_url || item.media_url;
         } else {
           // Fallback if we can't get the public URL (though we should)
            throw new Error("Uploaded, but failed to retrieve public URL. Try again.");
@@ -404,12 +404,12 @@ export default function CreateCoursePage() {
         let item = null;
         for (let i = 0; i < 3; i++) {
            item = await getMediaItem(mediaId, 'image');
-           if (item && item.media_url) break;
+           if (item && (item.cloudfront_url || item.media_url)) break;
            await new Promise(r => setTimeout(r, 500));
         }
 
-        if (item && item.media_url) {
-            thumbnailUrl = item.media_url;
+        if (item && (item.cloudfront_url || item.media_url)) {
+            thumbnailUrl = item.cloudfront_url || item.media_url;
         } else {
             throw new Error("Failed to resolve thumbnail URL");
         }

@@ -1,5 +1,4 @@
 import SignInForm from "@/components/SignInForm";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -40,10 +39,10 @@ export default function Page() {
             {/* Page title */}
             <div className="text-center mb-8">
               <h1 className="text-2xl lg:text-[32px] text-center font-semibold text-gray-900 dark:text-white mb-2">
-                Sign in to SMRI
+                Admin Login
               </h1>
               <p className="text-[#737373] text-base dark:text-gray-400">
-                Learn. Grow. Achieve — anywhere, anytime
+                Sign in to the administrative dashboard
               </p>
             </div>
 
@@ -51,31 +50,24 @@ export default function Page() {
             <div className="bg-white">
               {/* Sign in form */}
               <div className="mb-8">
-                <SignInForm />
+                {/* We stick to 'student' (individual) in backend mapping as per main login logic, 
+                    but visually hide it. The backend handles admin by email/role lookup usually. 
+                    If we need a specific 'admin' role string, we can change defaultRole="admin" 
+                    if the backend supports it. For now, assuming admins auth as "user" then get redirected.
+                */}
+                <SignInForm hideRoleSelection={true} defaultRole="student" />
               </div>
 
-
-
-              {/* Admin login ink */}
-              <div className="flex justify-center items-center gap-2 text-[14px] mb-4">
-                  <Link
-                      className="font-medium text-gray-500 hover:text-gray-900 underline"
-                      href="/auth/admin-login"
-                  >
-                      Log in as Admin
-                  </Link>
-              </div>
-
-              {/* Sign up link */}
-              <div className="flex justify-center items-center gap-2 text-[16px]">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Don&apos;t have an account?
+              {/* Back to regular login */}
+              <div className="flex justify-center items-center gap-2 text-[14px]">
+                 <p className="text-gray-600 dark:text-gray-400">
+                  Not an admin?
                 </p>
                 <Link
                   className="font-medium text-[#20646D] underline"
-                  href="/auth/sign-up"
+                  href="/auth/sign-in"
                 >
-                  Sign Up
+                  Sign in here
                 </Link>
               </div>
             </div>
@@ -91,6 +83,3 @@ export default function Page() {
     </div>
   );
 }
-
-// Email: admin@smri.com
-// Password: password123

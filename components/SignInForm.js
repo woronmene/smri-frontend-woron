@@ -40,13 +40,16 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+// ... imports
+// ... schema
+
 const accountRoleData = [
   { key: "Student", value: "student" },
   { key: "Teacher", value: "teacher" },
   { key: "Organization", value: "organization" },
 ];
 
-export default function SignInForm() {
+export default function SignInForm({ hideRoleSelection = false, defaultRole = "student" }) {
   const router = useRouter();
   const auth = useContext(AuthContext);
 
@@ -57,8 +60,8 @@ export default function SignInForm() {
 
   const login = useLogin();
 
-  // Default to "student"
-  const [accountRole, setAccountRole] = useState("student");
+  // Default to provided defaultRole or "student"
+  const [accountRole, setAccountRole] = useState(defaultRole);
 
   const form = useForm({
     resolver: zodResolver(signinSchema),
@@ -105,6 +108,7 @@ export default function SignInForm() {
   return (
     <div className="w-full">
       {/* Account Type Toggle (Consistent with SignUp) */}
+      {!hideRoleSelection && (
       <div className="flex flex-col items-start gap-2 mb-6">
           <Label className="text-sm font-medium">Account Role</Label>
           <ToggleGroup
@@ -139,6 +143,7 @@ export default function SignInForm() {
             ))}
           </ToggleGroup>
       </div>
+      )}
 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full flex-1">
@@ -234,7 +239,7 @@ export default function SignInForm() {
 
           {/* Forgot Password */}
           <Link
-            href="/forget-password"
+            href="/auth/forget-password"
             className="text-gray-600 text-sm font-medium underline"
           >
             Forgot Password?
