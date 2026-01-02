@@ -17,23 +17,20 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
 
   const isOrgAdmin = (user?.role || "").toLowerCase() === "school_admin";
-  const {
-    data: school,
-    isLoading: schoolLoading,
-    error: schoolError,
-  } = useGetSchool(isOrgAdmin);
+  // School data fetching removed as endpoint is currently restricted
+  const school = null;
 
   const initialPersonalValues = useMemo(
     () => ({
       firstName: user?.first_name || "",
       lastName: user?.last_name || "",
       email: user?.email || "",
-      school: school?.name || "",
+      school: user?.school_id || user?.schoolId || "",
       // phone & dob removed from UI but kept in state if needed or we can clean up
       phone: "",
       dob: "",
     }),
-    [user, school]
+    [user]
   );
   
   // Update form when user/school data loads
@@ -188,10 +185,7 @@ export default function SettingsPage() {
               values={personalForm}
               onChange={handlePersonalChange}
               user={user}
-              school={school}
               isOrgAdmin={isOrgAdmin}
-              schoolLoading={schoolLoading}
-              schoolError={schoolError}
             />
           ) : (
             <PasswordForm
@@ -209,10 +203,7 @@ function PersonalInfoForm({
   values,
   onChange,
   user,
-  school,
   isOrgAdmin,
-  schoolLoading,
-  schoolError,
 }) {
   return (
     <div className="max-w-3xl">
@@ -307,26 +298,8 @@ function PersonalInfoForm({
           </label>
           <div className="flex-1 space-y-2">
             <p className="text-gray-900 text-base">
-              {values.school || (isOrgAdmin ? school?.name : "") || "—"}
+              {values.school || "—"}
             </p>
-            {isOrgAdmin && (
-              <div className="mt-1">
-                <p className="text-xs font-medium text-gray-500 mb-1">
-                  Invite code for teachers & students
-                </p>
-                {schoolLoading ? (
-                  <p className="text-gray-400 text-sm">Loading invite code...</p>
-                ) : schoolError ? (
-                  <p className="text-red-500 text-sm">
-                    Could not load invite code
-                  </p>
-                ) : (
-                  <p className="font-mono text-base text-gray-900 bg-gray-100 inline-block px-3 py-1 rounded-lg">
-                    {school?.invite_code || "—"}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </div>
 

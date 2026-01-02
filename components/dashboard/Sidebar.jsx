@@ -56,7 +56,7 @@ const Sidebar = ({ className, onNavigate }) => {
        name: 'Teachers',
        href: '/dashboard/teachers',
        icon: '/teachers_sidemenu_icon.svg', // Assuming this icon exists or will default
-       show: user?.role === 'school_admin',
+       show: false, // Hidden for now as the page is not prepared
     },
     {
         name: 'Analytics',
