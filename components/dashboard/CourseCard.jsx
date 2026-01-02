@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, CheckCircle, MoreVertical, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { useState } from 'react';
 
-const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
+const CourseCard = ({ course, isAdmin, isStudent, onDelete, onEdit }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   // Normalize status casing from backend (e.g. 'Draft' vs 'draft')
@@ -53,7 +53,7 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
     >
       <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all p-5 sm:p-6 h-full flex flex-col justify-between relative">
         
-        {isAdmin && onDelete && (
+        {isAdmin && (onDelete || onEdit) && (
             <div className="absolute top-4 right-4 z-20">
                 <button
                     onClick={(e) => {
@@ -68,18 +68,34 @@ const CourseCard = ({ course, isAdmin, isStudent, onDelete }) => {
                 
                 {showMenu && (
                     <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-xl border border-gray-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onDelete(course.id);
-                                setShowMenu(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                        >
-                            <Trash2 size={14} />
-                            Delete
-                        </button>
+                        {onEdit && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onEdit(course.id);
+                                    setShowMenu(false);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                            >
+                                <Edit2 size={14} />
+                                Edit
+                            </button>
+                        )}
+                        {onDelete && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onDelete(course.id);
+                                    setShowMenu(false);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                            >
+                                <Trash2 size={14} />
+                                Delete
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

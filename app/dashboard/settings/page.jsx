@@ -9,16 +9,17 @@ import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
 import { updateUserProfile } from "@/lib/user-api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useGetSchool } from "@/hooks/auth-api";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { user } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState("personal");
   const queryClient = useQueryClient();
 
   const isOrgAdmin = (user?.role || "").toLowerCase() === "school_admin";
-  // School data fetching removed as endpoint is currently restricted
-  const school = null;
+  
+  // Fetch school details
+  const { data: schoolData, isLoading: schoolLoading } = useGetSchool();
 
   const initialPersonalValues = useMemo(
     () => ({
@@ -40,12 +41,6 @@ export default function SettingsPage() {
 
   const [personalForm, setPersonalForm] = useState(initialPersonalValues);
 
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
   const updateProfileMutation = useMutation({
     mutationFn: updateUserProfile,
     onSuccess: () => {
@@ -66,32 +61,16 @@ export default function SettingsPage() {
     setPersonalForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleCancel = () => {
     setPersonalForm(initialPersonalValues);
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (activeTab === "personal") {
-        updateProfileMutation.mutate({
-            first_name: personalForm.firstName,
-            last_name: personalForm.lastName,
-            // phone/dob ignored by backend
-        });
-    } else {
-        // Password update logic (requires separate implementation if endpoints differ)
-        console.log("Password update not explicitly requested yet");
-    }
+    updateProfileMutation.mutate({
+        first_name: personalForm.firstName,
+        last_name: personalForm.lastName,
+    });
   };
 
   return (
@@ -124,75 +103,16 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex flex-col md:flex-row">
-        {/* Mobile tab switcher */}
-        <div className="md:hidden px-4 pt-3 pb-2 border-b border-gray-200 bg-white flex gap-2 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab("personal")}
-            className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
-              activeTab === "personal"
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            Personal Info
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("password")}
-            className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${
-              activeTab === "password"
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            Password
-          </button>
-        </div>
-
-        {/* Left tab navigation (desktop) */}
-        <div className="hidden md:block w-64 border-r border-gray-200 bg-white p-6">
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("personal")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                activeTab === "personal"
-                  ? "bg-[#FAFAFA] border-[#E5E5E5] text-black"
-                  : "bg-transparent border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-              }`}
-            >
-              Personal Info
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("password")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                activeTab === "password"
-                  ? "bg-[#FAFAFA] border-[#E5E5E5] text-black"
-                  : "bg-transparent border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-              }`}
-            >
-              Password
-            </button>
-          </div>
-        </div>
-
-        {/* Right content area */}
+        {/* Main Content Area - direct render since tabs are removed */}
         <div className="flex-1 p-4 sm:p-6 lg:p-10">
-          {activeTab === "personal" ? (
-            <PersonalInfoForm
-              values={personalForm}
-              onChange={handlePersonalChange}
-              user={user}
-              isOrgAdmin={isOrgAdmin}
-            />
-          ) : (
-            <PasswordForm
-              values={passwordForm}
-              onChange={handlePasswordChange}
-            />
-          )}
+          <PersonalInfoForm
+            values={personalForm}
+            onChange={handlePersonalChange}
+            user={user}
+            isOrgAdmin={isOrgAdmin}
+            schoolData={schoolData}
+            schoolLoading={schoolLoading}
+          />
         </div>
       </div>
     </div>
@@ -204,6 +124,8 @@ function PersonalInfoForm({
   onChange,
   user,
   isOrgAdmin,
+  schoolData,
+  schoolLoading,
 }) {
   return (
     <div className="max-w-3xl">
@@ -284,9 +206,9 @@ function PersonalInfoForm({
               name="email"
               type="email"
               value={values.email}
-              onChange={onChange}
-              placeholder="johnyjackson@gmail.com"
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
+              disabled
+              readOnly
+              className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-6 text-base text-gray-500 cursor-not-allowed focus-visible:ring-0"
             />
           </div>
         </div>
@@ -298,8 +220,15 @@ function PersonalInfoForm({
           </label>
           <div className="flex-1 space-y-2">
             <p className="text-gray-900 text-base">
-              {values.school || "—"}
+              {schoolData?.name || values.school || "—"}
             </p>
+            {isOrgAdmin && schoolData?.invite_code && (
+               <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg inline-block">
+                  <p className="text-xs text-gray-500 mb-1">Invite Code</p>
+                  <code className="text-sm font-bold text-cyan-600">{schoolData.invite_code}</code>
+               </div>
+            )}
+            {schoolLoading && <span className="text-xs text-gray-400">Loading school details...</span>}
           </div>
         </div>
 
@@ -309,63 +238,4 @@ function PersonalInfoForm({
   );
 }
 
-function PasswordForm({ values, onChange }) {
-  return (
-    <div className="max-w-xl">
-      <div className="mb-8 pb-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Password</h2>
-        <p className="text-gray-500 text-sm">Update your account password</p>
-      </div>
-
-      <div className="space-y-8">
-        {/* Current password */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/3 text-gray-500 font-medium text-sm">
-            Current password
-          </label>
-          <div className="flex-1">
-            <Input
-              name="currentPassword"
-              type="password"
-              value={values.currentPassword}
-              onChange={onChange}
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-            />
-          </div>
-        </div>
-
-        {/* New password */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/3 text-gray-500 font-medium text-sm">
-            New password
-          </label>
-          <div className="flex-1">
-            <Input
-              name="newPassword"
-              type="password"
-              value={values.newPassword}
-              onChange={onChange}
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-            />
-          </div>
-        </div>
-
-        {/* Confirm password */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6">
-          <label className="w-full md:w-1/3 text-gray-500 font-medium text-sm">
-            Confirm new password
-          </label>
-          <div className="flex-1">
-            <Input
-              name="confirmPassword"
-              type="password"
-              value={values.confirmPassword}
-              onChange={onChange}
-              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+ 

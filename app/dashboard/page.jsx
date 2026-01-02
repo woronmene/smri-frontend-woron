@@ -26,6 +26,8 @@ export default function DashboardPage() {
     user?.role === "school_admin" || 
     user?.email?.includes("admin");
 
+  const isSmriAdmin = user?.role === "smri_admin";
+
   // Determine role string for API
   const userRole = isAdmin ? "admin" : isTeacher ? "teacher" : "student";
 
@@ -87,6 +89,10 @@ export default function DashboardPage() {
     }
   };
 
+  const handleEditCourse = (courseId) => {
+    router.push(`/dashboard/courses/create?courseId=${courseId}`);
+  };
+
   let tabs = [{ id: "all", label: "All Courses" }];
 
   if (isAdmin) {
@@ -143,7 +149,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Create Course Button - Only visible for admins */}
-          {isAdmin && (
+          {isSmriAdmin && (
             <Button
               onClick={() => router.push("/dashboard/courses/create")}
               className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center justify-center gap-2 rounded-[999px] px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm shadow-cyan-500/20 w-full sm:w-auto"
@@ -177,7 +183,8 @@ export default function DashboardPage() {
                   course={course}
                   isAdmin={isAdmin}
                   isStudent={isStudent}
-                  onDelete={handleDeleteCourse}
+                  onDelete={isSmriAdmin ? handleDeleteCourse : undefined}
+                  onEdit={isSmriAdmin ? handleEditCourse : undefined}
                 />
               );
             })}
@@ -187,22 +194,45 @@ export default function DashboardPage() {
           {filteredCourses?.length === 0 && (
             <div className="mt-4 sm:mt-6 text-center py-12 sm:py-16 bg-white rounded-xl border-2 border-dashed border-gray-200">
               <GraduationCap className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-                No courses yet
-              </h3>
-              <p className="text-gray-500 mb-6 text-sm sm:text-base">
-                {isAdmin
-                  ? "Get started by creating your first course"
-                  : "No courses found in this category"}
-              </p>
-              {isAdmin && (
-                <Button
-                  onClick={() => router.push("/dashboard/courses/create")}
-                  className="bg-cyan-500 hover:bg-cyan-600 text-white"
-                >
-                  <Plus size={18} className="mr-2" />
-                  Create Your First Course
-                </Button>
+              
+              {filter === 'draft' ? (
+                 <>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                        No draft courses
+                    </h3>
+                    <p className="text-gray-500 mb-6 text-sm sm:text-base">
+                        There are no courses here
+                    </p>
+                 </>
+              ) : filter === 'published' ? (
+                 <>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                        No published courses
+                    </h3>
+                    <p className="text-gray-500 mb-6 text-sm sm:text-base">
+                        There are no courses here
+                    </p>
+                 </>
+              ) : (
+                 <>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                        No courses yet
+                    </h3>
+                    <p className="text-gray-500 mb-6 text-sm sm:text-base">
+                        {isAdmin
+                        ? "Get started by creating your first course"
+                        : "No courses found in this category"}
+                    </p>
+                    {isSmriAdmin && (
+                        <Button
+                        onClick={() => router.push("/dashboard/courses/create")}
+                        className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                        >
+                        <Plus size={18} className="mr-2" />
+                        Create Your First Course
+                        </Button>
+                    )}
+                 </>
               )}
             </div>
           )}

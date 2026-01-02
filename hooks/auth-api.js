@@ -58,6 +58,16 @@ export function useVerifyOtp() {
   });
 }
 
+export function useResendOtp() {
+  return useMutation({
+    mutationFn: (payload) =>
+      apiFetch("/api/auth/resend-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  });
+}
+
 export function useForgotPassword() {
   return useMutation({
     mutationFn: (payload) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,13 @@ export default function CreateCoursePage() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
   const { user } = useContext(AuthContext);
+  
+  useEffect(() => {
+    if (user && user.role !== "smri_admin") {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
 
   const [activeTab, setActiveTab] = useState("information");
   const [loading, setLoading] = useState(false);
@@ -63,6 +70,7 @@ export default function CreateCoursePage() {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [editingModule, setEditingModule] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
+  const editorRef = useRef(null);
 
   useEffect(() => {
     if (courseId) {
@@ -303,12 +311,12 @@ export default function CreateCoursePage() {
       // 2. Handle Result
       let finalUrl = "";
       
-      if (serviceMediaType === 'image') {
-        // For images, we fetch the URL immediately
-        // Retry a couple times if S3 consistency lags
+      if (serviceMediaType === 'image' || serviceMediaType === 'audio') {
+        // For images AND audio (new flow), we fetch the URL immediately.
+        // Audio is now static file, just like Image.
         let item = null;
         for (let i = 0; i < 3; i++) {
-           item = await getMediaItem(mediaId, 'image');
+           item = await getMediaItem(mediaId, serviceMediaType);
            if (item && (item.cloudfront_url || item.media_url)) break;
            await new Promise(r => setTimeout(r, 500));
         }
@@ -322,7 +330,7 @@ export default function CreateCoursePage() {
         
         insertMediaIntoContent(finalUrl, mediaType, mediaId);
       } else {
-        // For Video/Audio, it's Async. We insert a placeholder.
+        // For Video, it's Async MediaConvert pipeline. We insert a placeholder.
         insertMediaIntoContent(null, mediaType, mediaId);
       }
 
@@ -353,13 +361,13 @@ export default function CreateCoursePage() {
           </div>`;
         break;
       case "audio":
+        // Now inserted directly as player
+        // Use src attribute directly on audio tag for better TipTap parsing compat
         mediaMarkup = `
-          <div data-smri-media-id="${mediaId}" data-smri-media-type="audio" class="smri-media-pending p-4 border rounded-lg bg-gray-50 my-4 flex items-center gap-3">
-             <div class="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600">🎵</div>
-             <div>
-               <p class="font-medium text-gray-900">Audio Processing...</p>
-               <p class="text-xs text-gray-500">ID: ${mediaId}</p>
-             </div>
+          <div class="my-4">
+            <audio src="${url}" controls class="w-full">
+              Your browser does not support the audio element.
+            </audio>
           </div>`;
         break;
       case "document":
@@ -370,7 +378,12 @@ export default function CreateCoursePage() {
         mediaMarkup = `<p><a href="${url}">${url}</a></p>`;
     }
 
-    updateLessonContent(currentContent + mediaMarkup);
+    console.log("Inserting media. EditorRef:", editorRef.current);
+    if (editorRef.current) {
+        editorRef.current.insertContent(mediaMarkup);
+    } else {
+        updateLessonContent(currentContent + mediaMarkup);
+    }
   };
 
   const insertLink = () => {
@@ -631,6 +644,7 @@ export default function CreateCoursePage() {
                 updateLessonContent={updateLessonContent}
                 openMediaModal={openMediaModal}
                 insertLink={insertLink}
+                editorRef={editorRef}
               />
             )}
           </div>
@@ -735,6 +749,7 @@ function CurriculumBuilderTab({
   updateLessonContent,
   openMediaModal,
   insertLink,
+  editorRef,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -812,6 +827,7 @@ function CurriculumBuilderTab({
             </div>
             <div className="flex-1 overflow-hidden border rounded-lg bg-white">
                 <TipTapEditor
+                    ref={editorRef}
                     content={getCurrentLessonContent()}
                     editable={!isPreviewMode}
                     onChange={isPreviewMode ? () => {} : updateLessonContent}

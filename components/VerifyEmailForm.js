@@ -14,7 +14,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
-import { useVerifyOtp } from "@/hooks/auth-api";
+import { useVerifyOtp, useResendOtp } from "@/hooks/auth-api";
+import { toast } from "sonner";
 
 const optLength = 6;
 
@@ -33,6 +34,7 @@ export default function VerifyEmailForm() {
   const [resendTimer, setResendTimer] = useState(60);
 
   const verify = useVerifyOtp();
+  const resend = useResendOtp();
 
   const form = useForm({
     resolver: zodResolver(verifyEmailSchema),
@@ -62,8 +64,18 @@ export default function VerifyEmailForm() {
     const email = form.getValues("email");
 
     if (!email || loading || resendTimer > 0) return;
-
-    setResendTimer(60);
+    
+    // We don't block UI with full page loading state for resend usually, 
+    // but preventing double click is good.
+    try {
+        const type = query.get("type") || "student";
+        await resend.mutateAsync({ email, type });
+        toast.success("Code resent successfully");
+        setResendTimer(60);
+    } catch (err) {
+        console.error(err);
+        setError(err.message || "Failed to resend code");
+    }
   };
 
   // Verify OTP

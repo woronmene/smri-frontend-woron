@@ -1,7 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useEffect } from 'react';
+import { useEffect, forwardRef, useImperativeHandle } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
@@ -334,7 +334,7 @@ const MenuBar = ({ editor, onAddImage, onAddVideo, onAddAudio, onAddDocument }) 
   );
 };
 
-const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVideo, onAddAudio, onAddDocument }) => {
+const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImage, onAddVideo, onAddAudio, onAddDocument }, ref) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -364,6 +364,14 @@ const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVid
         attributes: { class: 'prose prose-sm sm:prose-base focus:outline-none max-w-none min-h-[300px] p-4' },
     },
   });
+
+  useImperativeHandle(ref, () => ({
+    insertContent: (htmlContent) => {
+        if (editor) {
+            editor.chain().focus().insertContent(htmlContent).run();
+        }
+    }
+  }));
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -464,8 +472,6 @@ const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVid
                    let replacementTag = '';
                     if (mediaType === 'video') {
                        replacementTag = `<video src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full h-auto rounded-lg shadow-md aspect-video my-6 bg-black"></video>`;
-                   } else if (mediaType === 'audio') {
-                       replacementTag = `<audio src="${statusData.cloudfront_url || statusData.media_url}" controls class="w-full my-4"></audio>`;
                    }
 
                    // We use a text replacement on the editor content
@@ -494,6 +500,8 @@ const TipTapEditor = ({ content, onChange, editable = true, onAddImage, onAddVid
       <EditorContent editor={editor} className="flex-1 overflow-y-auto" />
     </div>
   );
-};
+});
+
+TipTapEditor.displayName = 'TipTapEditor';
 
 export default TipTapEditor;
