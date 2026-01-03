@@ -13,7 +13,7 @@ export default function AuthRightSide() {
           className="h-[386px] w-full object-fill -scale-x-100 rounded-t-4xl"
         />
       </div> */}
-      <div className='h-[386px] rounded-t-[20px] bg-cover bg-center bg-[url("/auth_bg_image.png.jpg")]'>
+      <div className='h-[386px] rounded-t-[20px] bg-cover bg-center bg-[url("/auth_bg_image.png")]'>
 
       </div>
       <div

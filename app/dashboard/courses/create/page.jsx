@@ -889,7 +889,7 @@ function CurriculumBuilderTab({
                                     onAddDocument={() => openMediaModal("document")}
                                 />
                              </div>
-                             {!isPreviewMode && <div className="p-2 text-center text-xs text-gray-400 bg-gray-50 border-t border-gray-100">Changes auto-saved to draft</div>}
+                             {/* {!isPreviewMode && <div className="p-2 text-center text-xs text-gray-400 bg-gray-50 border-t border-gray-100">Changes auto-saved to draft</div>} */}
                           </div>
                        )}
                     </div>
