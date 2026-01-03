@@ -16,6 +16,7 @@ import {
   Minimize2,
   Eye,
   EyeOff,
+  AlertCircle,
 } from "lucide-react";
 import {
   uploadMedia,
@@ -58,6 +59,10 @@ export default function CreateCoursePage() {
   const [mediaType, setMediaType] = useState(null); // 'video', 'image', 'audio', 'document'
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [saveAction, setSaveAction] = useState(null);
 
   const [courseData, setCourseData] = useState({
     title: "",
@@ -71,6 +76,8 @@ export default function CreateCoursePage() {
   const [editingModule, setEditingModule] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
   const editorRef = useRef(null);
+  // Map to track tempId -> realBackendId to prevents duplicates on subsequent saves
+  const backendIdMap = useRef(new Map());
 
   useEffect(() => {
     if (courseId) {
@@ -88,10 +95,10 @@ export default function CreateCoursePage() {
             setModules(
               course.modules.map((m) => ({
                 ...m,
-                id: Number(m.id) || Date.now() + Math.random(),
+                id: m.id || Date.now() + Math.random(),
                 lessons: (m.lessons || []).map((l) => ({
                   ...l,
-                  id: Number(l.id) || Date.now() + Math.random(),
+                  id: l.id || Date.now() + Math.random(),
                 })),
               }))
             );
@@ -428,17 +435,35 @@ export default function CreateCoursePage() {
         }
     }
 
+    // Construct the FULL payload including nested modules and lessons.
     const coursePayload = {
       title: courseData.title,
       description: courseData.shortDescription || "",
       fullDescription: courseData.fullDescription || "",
-      thumbnail: thumbnailUrl || "",
+      fullDescription: courseData.fullDescription || "",
+      thumbnail: thumbnailUrl || null,
       category: "Technology",
       level: "Beginner",
       duration: "4 weeks",
       status: status,
       createdBy: user?.uid || "mock-user-id",
       createdByEmail: user?.email,
+      
+      // Nested Modules & Lessons
+      modules: modules.map(m => ({
+          id: m.id,
+          title: m.title,
+          description: m.description || "",
+          lessons: m.lessons.map((l, lIdx) => ({
+              id: l.id,
+              title: l.title,
+              introduction: l.introduction || "",
+              content: l.content || "", // HTML content
+              duration: l.duration || "10 min",
+              order: lIdx + 1,
+              videoUrl: l.videoUrl || null
+          }))
+      }))
     };
 
     let savedCourse;
@@ -448,63 +473,35 @@ export default function CreateCoursePage() {
       savedCourse = await createCourse(coursePayload);
     }
     
-    const finalCourseId = savedCourse.id || courseId;
-
-    // Save Modules
-    for (const [mIdx, m] of modules.entries()) {
-      let savedModule;
-      const modulePayload = { title: m.title, description: "" };
-
-      if (m.id && typeof m.id === 'string' && m.id.includes('-')) {
-         savedModule = await updateModule(finalCourseId, m.id, modulePayload);
-      } else {
-         savedModule = await createModule(finalCourseId, modulePayload);
-         // Update state ID to prevent duplicates if we save multiple times
-         m.id = savedModule.id; 
-      }
-
-      // Save Lessons
-      for (const [lIdx, l] of m.lessons.entries()) {
-        const lessonPayload = {
-          title: l.title,
-          introduction: "",
-          content: l.content || "",
-          duration: "10 min",
-          order: lIdx + 1
-        };
-
-        if (l.id && typeof l.id === 'string' && l.id.includes('-')) {
-           await updateLesson(finalCourseId, savedModule.id, l.id, lessonPayload);
-        } else {
-           const savedLesson = await createLesson(finalCourseId, savedModule.id, lessonPayload);
-           l.id = savedLesson.id;
-        }
-      }
-    }
-    
-    return finalCourseId;
+    return savedCourse.id;
   };
 
   const handleSaveDraft = async () => {
     setError("");
+    setSaveAction("draft");
     setLoading(true);
     try {
       if (!courseData.title.trim()) throw new Error("Course title is required");
       if (!user) throw new Error("You must be signed in");
+      if (!thumbnailFile && !courseData.thumbnailUrl) throw new Error("Please upload a course thumbnail to save as draft.");
 
       await saveCourseData("Draft");
       alert("Course saved as draft!");
       router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      setError(err.message);
+      setErrorTitle("Save Failed");
+      setErrorMessage(err.message || "An unexpected error occurred.");
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
+      setSaveAction(null);
     }
   };
 
   const handlePublish = async () => {
     setError("");
+    setSaveAction("publish");
     setLoading(true);
     try {
       if (!courseData.title.trim()) throw new Error("Course title is required");
@@ -517,10 +514,15 @@ export default function CreateCoursePage() {
 
       await saveCourseData("Published");
       setLoading(false);
+      setSaveAction(null);
       setShowSuccess(true);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setErrorTitle("Publish Failed");
+      setErrorMessage(err.message || "An unexpected error occurred.");
+      setShowErrorModal(true);
       setLoading(false);
+      setSaveAction(null);
     }
   };
 
@@ -549,14 +551,21 @@ export default function CreateCoursePage() {
               disabled={loading}
               className="border-gray-300 w-full sm:w-auto"
             >
-              Save as Draft
+              {loading && saveAction === "draft" ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save as Draft"
+              )}
             </Button>
             <Button
               onClick={handlePublish}
               disabled={loading}
               className="bg-cyan-500 hover:bg-cyan-600 px-4 sm:px-5 py-2.5 sm:py-3 text-white w-full sm:w-auto"
             >
-              {loading ? (
+              {loading && saveAction === "publish" ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Publishing...
@@ -660,6 +669,33 @@ export default function CreateCoursePage() {
           error={error}
         />
       )}
+
+      {showErrorModal && (
+        <ErrorModal
+          title={errorTitle}
+          message={errorMessage}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ErrorModal({ title, message, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600">
+            <AlertCircle size={24} />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed">{message}</p>
+          <Button onClick={onClose} className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl py-3">
+            Okay, I'll fix it
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -759,87 +795,125 @@ function CurriculumBuilderTab({
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Curriculum Builder</h2>
       <p className="text-gray-600 mb-8">Create course modules and lessons.</p>
 
-      <div className="space-y-8">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Modules</h3>
-          <div className="space-y-3">
-            {modules.map((module) => (
-              <div key={module.id} className="border border-cyan-200 bg-cyan-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  {editingModule === module.id ? (
-                    <Input value={module.title} onChange={(e) => updateModuleTitle(module.id, e.target.value)} onBlur={() => toggleEditModule(module.id)} autoFocus className="flex-1 mr-2 bg-white" />
-                  ) : (
-                    <span className="font-medium text-gray-900 flex-1">{module.title}</span>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => toggleEditModule(module.id)} className="text-gray-400 hover:text-gray-600 p-1"><Edit2 size={16} /></button>
-                    <button onClick={() => deleteModule(module.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-                <button onClick={() => addLesson(module.id)} className="text-xs text-cyan-600 hover:text-cyan-700 font-medium flex items-center gap-1"><Plus size={14} /> Add Lesson</button>
-              </div>
-            ))}
-            <button onClick={addModule} className="flex items-center gap-2 text-cyan-600 font-medium text-sm"><Plus size={16} /> Add Module</button>
-          </div>
-        </div>
-
-        {modules.some((m) => m.lessons.length > 0) && (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lessons</h3>
-            <div className="space-y-3">
-              {modules.map((module) =>
-                module.lessons.map((lesson) => (
-                  <div
-                    key={`${module.id}-${lesson.id}`}
-                    onClick={() => setSelectedLesson({ moduleId: module.id, lessonId: lesson.id })}
-                    className={`border rounded-lg p-4 cursor-pointer ${selectedLesson?.lessonId === lesson.id ? "border-cyan-500 bg-cyan-50" : "border-cyan-200 hover:border-cyan-300"}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      {editingLesson === lesson.id ? (
-                        <Input value={lesson.title} onChange={(e) => updateLessonTitle(module.id, lesson.id, e.target.value)} onBlur={() => toggleEditLesson(lesson.id)} autoFocus className="flex-1 mr-2 bg-white" />
-                      ) : (
-                        <span className="font-medium text-gray-900 flex-1">{lesson.title}</span>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); toggleEditLesson(lesson.id); }} className="text-gray-400 hover:text-gray-600 p-1"><Edit2 size={16} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); deleteLesson(module.id, lesson.id); }} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {selectedLesson && (
-          <div className={isExpanded ? "fixed inset-0 z-50 bg-white p-4 flex flex-col" : "relative h-[600px] flex flex-col"}>
+      <div className="space-y-6">
+        {modules.map((module, mIndex) => (
+          <div key={module.id} className="border border-cyan-200 bg-cyan-50 rounded-xl p-6 transition-all">
+            {/* Module Header */}
             <div className="flex items-center justify-between mb-4">
-               <h3 className="text-lg font-semibold text-gray-900">Lesson Content</h3>
-               <div className="flex gap-2">
-                 <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(!isPreviewMode)} className="gap-2">
-                    {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />} {isPreviewMode ? "Edit" : "Preview"}
-                 </Button>
-                 <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="gap-2">
-                    {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                 </Button>
+               {editingModule === module.id ? (
+                 <Input 
+                    value={module.title} 
+                    onChange={(e) => updateModuleTitle(module.id, e.target.value)} 
+                    onBlur={() => toggleEditModule(module.id)} 
+                    autoFocus 
+                    className="flex-1 mr-4 bg-white text-lg font-semibold" 
+                 />
+               ) : (
+                 <div className="flex flex-col">
+                    <span className="text-xs font-bold text-cyan-600 uppercase tracking-wide mb-1">Module {mIndex + 1}</span>
+                    <h3 onClick={() => toggleEditModule(module.id)} className="text-lg font-bold text-gray-900 cursor-pointer hover:text-cyan-700">
+                       {module.title}
+                    </h3>
+                 </div>
+               )}
+               <div className="flex items-center gap-2">
+                 <button onClick={() => toggleEditModule(module.id)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-white transition-colors"><Edit2 size={16} /></button>
+                 <button onClick={() => deleteModule(module.id)} className="p-2 text-red-400 hover:text-red-600 rounded-full hover:bg-white transition-colors"><Trash2 size={16} /></button>
                </div>
             </div>
-            <div className="flex-1 overflow-hidden border rounded-lg bg-white">
-                <TipTapEditor
-                    ref={editorRef}
-                    content={getCurrentLessonContent()}
-                    editable={!isPreviewMode}
-                    onChange={isPreviewMode ? () => {} : updateLessonContent}
-                    onAddImage={() => openMediaModal("image")}
-                    onAddVideo={() => openMediaModal("video")}
-                    onAddAudio={() => openMediaModal("audio")}
-                    onAddDocument={() => openMediaModal("document")}
-                />
+
+            {/* Lessons List */}
+            <div className="space-y-3 pl-4 border-l-2 border-cyan-200 ml-2">
+               {module.lessons.map((lesson, lIndex) => {
+                  const isSelected = selectedLesson?.lessonId === lesson.id;
+                  return (
+                    <div key={lesson.id} className="flex flex-col gap-2">
+                       {/* Lesson Item */}
+                       <div 
+                         onClick={() => setSelectedLesson(isSelected ? null : { moduleId: module.id, lessonId: lesson.id })}
+                         className={`relative flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
+                           isSelected 
+                             ? "bg-white border-cyan-500 shadow-md ring-1 ring-cyan-500" 
+                             : "bg-white border-gray-200 hover:border-cyan-300 hover:shadow-sm"
+                         }`}
+                       >
+                          <div className="flex items-center gap-3 flex-1">
+                             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-100 text-cyan-700 text-xs font-bold">
+                                {lIndex + 1}
+                             </span>
+                             {editingLesson === lesson.id ? (
+                               <Input 
+                                  value={lesson.title} 
+                                  onChange={(e) => updateLessonTitle(module.id, lesson.id, e.target.value)} 
+                                  onBlur={() => toggleEditLesson(lesson.id)} 
+                                  autoFocus 
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 h-8 text-sm" 
+                               />
+                             ) : (
+                               <span className="font-medium text-gray-700">{lesson.title}</span>
+                             )}
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                             <button onClick={(e) => { e.stopPropagation(); toggleEditLesson(lesson.id); }} className="p-1.5 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"><Edit2 size={14} /></button>
+                             <button onClick={(e) => { e.stopPropagation(); deleteLesson(module.id, lesson.id); }} className="p-1.5 text-red-400 hover:text-red-600 rounded hover:bg-gray-100"><Trash2 size={14} /></button>
+                          </div>
+                       </div>
+
+                       {/* Inline Editor Area */}
+                       {isSelected && (
+                          <div className={`mt-2 border border-cyan-200 rounded-xl overflow-hidden bg-white shadow-sm transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${isExpanded ? "fixed inset-0 z-50 m-0 rounded-none h-screen flex flex-col" : ""}`}>
+                             <div className="flex items-center justify-between p-3 border-b border-gray-100 bg-gray-50">
+                                <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                                  <Edit2 size={12}/> Editing Content
+                                </span>
+                                <div className="flex gap-2">
+                                   <Button variant="ghost" size="sm" onClick={() => setIsPreviewMode(!isPreviewMode)} className="h-8 gap-2 text-xs">
+                                      {isPreviewMode ? <EyeOff size={14} /> : <Eye size={14} />} {isPreviewMode ? "Edit" : "Preview"}
+                                   </Button>
+                                   <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="h-8 gap-2 text-xs">
+                                      {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                                   </Button>
+                                </div>
+                             </div>
+                             <div className="flex-1 overflow-hidden bg-white relative min-h-[400px]">
+                                <TipTapEditor
+                                    ref={editorRef}
+                                    content={getCurrentLessonContent()}
+                                    editable={!isPreviewMode}
+                                    onChange={isPreviewMode ? () => {} : updateLessonContent}
+                                    onAddImage={() => openMediaModal("image")}
+                                    onAddVideo={() => openMediaModal("video")}
+                                    onAddAudio={() => openMediaModal("audio")}
+                                    onAddDocument={() => openMediaModal("document")}
+                                />
+                             </div>
+                             {!isPreviewMode && <div className="p-2 text-center text-xs text-gray-400 bg-gray-50 border-t border-gray-100">Changes auto-saved to draft</div>}
+                          </div>
+                       )}
+                    </div>
+                  );
+               })}
+               
+               {/* Add Lesson Button */}
+               <button 
+                 onClick={() => addLesson(module.id)} 
+                 className="w-full py-3 border-2 border-dashed border-cyan-200 rounded-lg text-sm font-medium text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 transition-all flex items-center justify-center gap-2"
+               >
+                 <Plus size={16} /> Add Lesson to Module {mIndex + 1}
+               </button>
             </div>
-            {!isPreviewMode && <p className="text-xs text-gray-500 mt-2">Auto-saving...</p>}
           </div>
-        )}
+        ))}
+
+        {/* Add Module Button */}
+        <button 
+          onClick={addModule} 
+          className="w-full py-6 border-2 border-dashed border-gray-300 rounded-xl text-lg font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus size={20} /> Add New Module
+        </button>
       </div>
     </div>
   );

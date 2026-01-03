@@ -12,7 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
-import { useContext, useMemo } from "react";
+import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import LessonContentRenderer from "@/components/dashboard/LessonContentRenderer";
 import { getCourseById } from "@/lib/cms-api";
@@ -38,37 +38,6 @@ export default function LessonPage() {
     queryFn: () => getCourseById(courseId),
     enabled: !!courseId,
   });
-  // Flatten lessons and locate current/prev/next with module context.
-  // NOTE: This hook must run on every render (even while loading) to keep hook order stable.
-  const { currentLesson, prevLesson, nextLesson } = useMemo(() => {
-    if (!course?.modules) {
-      return { currentLesson: null, prevLesson: null, nextLesson: null };
-    }
-
-    const allLessons = [];
-    course.modules.forEach((mod, mIdx) => {
-      (mod.lessons || []).forEach((les, lIdx) => {
-        allLessons.push({
-          ...les,
-          moduleId: mod.id,
-          moduleTitle: mod.title,
-          moduleIndex: mIdx + 1,
-          lessonIndex: lIdx + 1,
-        });
-      });
-    });
-
-    const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
-    if (currentIndex === -1) {
-      return { currentLesson: null, prevLesson: null, nextLesson: null };
-    }
-
-    return {
-      currentLesson: allLessons[currentIndex],
-      prevLesson: allLessons[currentIndex - 1],
-      nextLesson: allLessons[currentIndex + 1],
-    };
-  }, [course, lessonId]);
 
   if (isLoading) {
     return (
@@ -92,27 +61,51 @@ export default function LessonPage() {
     );
   }
 
+  // LMS Logic: Find current lesson and navigation context
+  let currentLesson = null;
+  let prevLesson = null;
+  let nextLesson = null;
+
+  const allLessons = [];
+  if (course.modules) {
+      course.modules.forEach((mod, mIdx) => {
+        (mod.lessons || []).forEach((les, lIdx) => {
+            allLessons.push({
+                ...les,
+                moduleId: mod.id,
+                moduleTitle: mod.title,
+                moduleIndex: mIdx + 1,
+                lessonIndex: lIdx + 1
+            });
+        });
+      });
+  }
+
+  const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+
+  if (currentIndex !== -1) {
+    currentLesson = allLessons[currentIndex];
+    prevLesson = allLessons[currentIndex - 1];
+    nextLesson = allLessons[currentIndex + 1];
+  }
+
   if (!currentLesson) {
     return <div className="p-8">Lesson not found</div>;
   }
 
   const handleMarkAsDone = async () => {
     try {
-      const userId =
-        user?.user_id || user?.id || user?.userId || "mock-student"; // fallback while auth integration is in progress
-
+      const userId = user?.user_id || user?.id || user?.userId || "mock-student"; 
       const schoolId = user?.school_id || null;
 
       await markLessonComplete({
         userId,
         schoolId,
         courseId,
-        moduleId: currentLesson.moduleId,
+        moduleId: currentLesson.moduleId, 
         lessonId,
       });
-
-      // For now we just log; later you can show a toast or update UI state
-      console.log("Marked lesson as complete in analytics");
+      console.log("Marked lesson as complete");
     } catch (err) {
       console.error("Failed to mark lesson complete:", err);
     }
@@ -128,14 +121,12 @@ export default function LessonPage() {
         >
           My Courses
         </Link>
-        {/* <span>/</span> */}
         <Link
           href={`/dashboard/courses/${courseId}`}
           className="hover:text-gray-900 transition-colors"
         >
           {course.title}
         </Link>
-        {/* <span>/</span> */}
         <span className="text-gray-900 font-medium">Modules</span>
       </nav>
 
@@ -163,12 +154,8 @@ export default function LessonPage() {
         </p>
       </div>
 
-      {/* Main Content (Renderer Handles Video/Text) */}
+      {/* Main Content */}
       <div className="mb-12">
-        {/* If we had a dedicated video URL field, we might render a featured player here. 
-             Assuming the renderer handles it or we manually inject for demo if content is empty/structured. 
-             For now, relying on content renderer but wrapping it cleanly. 
-         */}
         <article className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-img:rounded-2xl prose-img:shadow-sm">
           <LessonContentRenderer content={currentLesson.content || ""} />
         </article>
@@ -176,7 +163,6 @@ export default function LessonPage() {
 
       {/* Footer Navigation */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-16 pt-8 border-t border-gray-100">
-        {/* Previous Button */}
         <div>
           {prevLesson ? (
             <Link
@@ -187,13 +173,11 @@ export default function LessonPage() {
               Previous
             </Link>
           ) : (
-            <div className="w-[100px]"></div> // Spacer
+            <div className="w-[100px]"></div>
           )}
         </div>
 
-        {/* Right Action Group */}
         <div className="flex items-center gap-3">
-          {/* Mark as Done */}
           {!isAdmin && !isTeacher && (
             <button
               onClick={handleMarkAsDone}
@@ -203,7 +187,6 @@ export default function LessonPage() {
             </button>
           )}
 
-          {/* Next Button */}
           {nextLesson ? (
             <Link
               href={`/dashboard/courses/${courseId}/lessons/${nextLesson.id}`}
@@ -213,7 +196,7 @@ export default function LessonPage() {
               <ChevronRight size={16} />
             </Link>
           ) : (
-            <div className="w-[88px]"></div> // approximate spacer for alignment if needed
+            <div className="w-[88px]"></div> 
           )}
         </div>
       </div>
