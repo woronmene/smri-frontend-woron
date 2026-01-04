@@ -147,7 +147,7 @@ export default function CreateCoursePage() {
 
   const addModule = () => {
     const newModule = {
-      id: Date.now() + Math.random(),
+      id: Date.now(),
       title: `Module ${modules.length + 1}: New Module`,
       lessons: [],
       isEditing: true,
@@ -176,7 +176,7 @@ export default function CreateCoursePage() {
   const addLesson = (moduleId) => {
     const module = modules.find((m) => m.id === moduleId);
     const newLesson = {
-      id: Date.now() + Math.random(),
+      id: Date.now(),
       title: `Lesson ${module.lessons.length + 1}: New Lesson`,
       content: "",
       isEditing: true,
