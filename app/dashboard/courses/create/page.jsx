@@ -69,6 +69,7 @@ export default function CreateCoursePage() {
     shortDescription: "",
     fullDescription: "",
     thumbnailUrl: "",
+    audience: "Student",
   });
 
   const [modules, setModules] = useState([]);
@@ -89,6 +90,7 @@ export default function CreateCoursePage() {
             shortDescription: course.description || "",
             fullDescription: course.fullDescription || "",
             thumbnailUrl: course.thumbnail || "",
+            audience: course.audience || "Student",
           });
 
           if (course.modules) {
@@ -442,6 +444,7 @@ export default function CreateCoursePage() {
       fullDescription: courseData.fullDescription || "",
       fullDescription: courseData.fullDescription || "",
       thumbnail: thumbnailUrl || null,
+      audience: courseData.audience,
       category: "Technology",
       level: "Beginner",
       duration: "4 weeks",
@@ -738,6 +741,39 @@ function CourseInformationTab({
               <input type="file" className="hidden" accept="image/*" onChange={handleThumbnailSelect} />
             </label>
           </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-start gap-6 pb-8 border-b border-gray-100">
+           <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm pt-2">Target Audience</label>
+           <div className="flex-1 space-y-2">
+              <div className="flex gap-4">
+                 <button
+                    onClick={() => handleInputChange({ target: { name: "audience", value: "Student" } })}
+                    className={`px-5 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                       courseData.audience === "Student" 
+                         ? "border-cyan-500 bg-cyan-50 text-cyan-700 ring-2 ring-cyan-500/20"
+                         : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                 >
+                    Students
+                 </button>
+                 <button
+                    onClick={() => handleInputChange({ target: { name: "audience", value: "Teacher" } })}
+                    className={`px-5 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                       courseData.audience === "Teacher"
+                         ? "border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-500/20"
+                         : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                 >
+                    Teachers
+                 </button>
+              </div>
+              <p className="text-xs text-gray-400">
+                {courseData.audience === "Teacher" 
+                  ? "This course will only be visible to teachers and school admins."
+                  : "This course is available to all students enrolled in your school."}
+              </p>
+           </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">

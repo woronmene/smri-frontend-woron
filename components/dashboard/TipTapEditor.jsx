@@ -480,7 +480,7 @@ const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImag
                    
                    if (newContent !== currentHTML) {
                        editor.commands.setContent(newContent, true); // true = emit update
-                       onChange(newContent); // Inform parent
+                       if (onChange) onChange(newContent); // Inform parent if callback provided
                    }
                }
           }

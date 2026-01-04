@@ -42,6 +42,20 @@ export default function DashboardPage() {
 
   const filteredCourses = courses?.filter((course) => {
     const status = (course.status || "").toLowerCase();
+    const audience = (course.audience || "Student");
+
+    // 1. Audience Check
+    // Students should NOT see Teacher courses
+    if (!isAdmin && !isTeacher) {
+       if (audience === "Teacher") return false;
+    }
+
+    // Teachers should see Teacher courses. 
+    // If requirement implies Teachers ONLY see Teacher courses in their view, we might need strictness.
+    // But usually Teachers need to see Student courses too.
+    // User said: "I selected 'teacher'... I was expecting it to be scoped to only show teachers."
+    // And "I logged out and logged in as a student... I could see it... I'm only supposed to be able to see it as a teacher".
+    // This confirms shielding the course FROM Students.
 
     if (filter === "all") return true;
 
