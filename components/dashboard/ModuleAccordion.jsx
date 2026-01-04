@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 
 const ModuleAccordion = ({ module, courseId }) => {
   const [isOpen, setIsOpen] = useState(false);
+  console.log(module, 'Modules');
 
   return (
     <div className="border-b border-gray-200 py-4 overflow-hidden mb-4 bg-white">
@@ -27,7 +28,7 @@ const ModuleAccordion = ({ module, courseId }) => {
       <div
         className={cn(
           'divide-y divide-gray-100 transition-all duration-300 ease-out',
-          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'max-h-auto opacity-100' : 'max-h-0 opacity-0'
         )}
       >
         {module.lessons.map((lesson) => (
@@ -48,7 +49,7 @@ const ModuleAccordion = ({ module, courseId }) => {
                 {lesson.title}
               </p>
               <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                {lesson.introduction}
+                {lesson.introduction} 
               </p>
             </div>
           </Link>
