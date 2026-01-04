@@ -383,14 +383,25 @@ export default function SignUpForm() {
                     className="border-primary ring-primary rounded"
                   />
                 </FormControl>
-                <FormLabel className="text-gray-600 flex-1 flex flex-wrap">
-                  By creating an account, you agree to our{" "}
-                  <Link
-                    className="text-[#0A0A0A] font-medium underline"
-                    href="/privacy-policy"
+                <FormLabel  className="text-gray-600 text-left flex-1 flex flex-wrap text-sm leading-tight">
+                  <p>
+
+                  By creating an account, I agree that I have read and accepted the{" "}
+                  <span
+                  onClick={()=> router.push("/terms-of-service")}
+                    className="text-[#0A0A0A] font-medium underline mx-1 hover:text-cyan-600 transition-colors"
+                  >
+                    Terms of Service
+                  </span>
+                  and
+                  <span
+                    onClick={()=> router.push("/privacy-policy")}
+                    className="text-[#0A0A0A] font-medium underline ml-1 hover:text-cyan-600 transition-colors"
                   >
                     Privacy Policy
-                  </Link>
+                  </span>
+                  </p>
+                  .
                 </FormLabel>
               </div>
               <FormMessage />

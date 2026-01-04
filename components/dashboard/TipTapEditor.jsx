@@ -1,7 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, forwardRef, useImperativeHandle, useState } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
@@ -24,6 +24,7 @@ import {
   Paperclip, Music, RefreshCw
 } from 'lucide-react';
 import { getMediaItem } from '@/lib/media-api';
+import { getPresignedContentUrl } from '@/lib/cms-api';
 
 // Custom Font Size Extension
 const FontSize = Extension.create({
@@ -335,6 +336,44 @@ const MenuBar = ({ editor, onAddImage, onAddVideo, onAddAudio, onAddDocument }) 
 };
 
 const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImage, onAddVideo, onAddAudio, onAddDocument }, ref) => {
+  // Initialize cleanly: if it's an S3 link, start empty to avoid flash of raw URL.
+  const [fetchedContent, setFetchedContent] = useState(() => {
+      if (typeof content === 'string' && content.startsWith('s3-content://')) {
+          return ''; 
+      }
+      return content;
+  });
+  
+  const [isLoadingS3, setIsLoadingS3] = useState(() => typeof content === 'string' && content.startsWith('s3-content://'));
+
+  useEffect(() => {
+    if (typeof content === 'string' && content.startsWith('s3-content://')) {
+        setIsLoadingS3(true);
+        getPresignedContentUrl(content)
+            .then(url => {
+                 // console.log("Fetching S3 Content from:", url);
+                 if (!url) throw new Error("No URL returned");
+                 return fetch(url);
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch content from S3");
+                return res.text();
+            })
+            .then(text => {
+                setFetchedContent(text);
+                setIsLoadingS3(false);
+            })
+            .catch(err => {
+                console.error("Error loading S3 content:", err);
+                setFetchedContent("<p>Error loading lesson content. Please try again.</p>");
+                setIsLoadingS3(false);
+            });
+    } else {
+        setFetchedContent(content);
+        setIsLoadingS3(false); // Ensure we reset if switching from S3 lesson to normal lesson
+    }
+  }, [content]);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -354,11 +393,13 @@ const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImag
       PendingMediaExtension, // Register custom pending media extension
       Highlight.configure({ multipart: true }),
     ],
-    content: content,
+    content: fetchedContent,
     editable: editable,
     immediatelyRender: false, // Fix SSR hydration mismatch
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      if (onChange) {
+        onChange(editor.getHTML());
+      }
     },
     editorProps: {
         attributes: { class: 'prose prose-sm sm:prose-base focus:outline-none max-w-none min-h-[300px] p-4' },
@@ -374,13 +415,13 @@ const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImag
   }));
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-        const currentSelection = editor.state.selection;
-        editor.commands.setContent(content);
-        // Restore cursor position if possible, though setting content usually resets it
-        // Ideally we only update if content is drastically different to avoid cursor jumps
+    if (editor && fetchedContent !== editor.getHTML()) {
+        // Only update if the content is actually different to avoid loops/cursor resets
+        // Note: editor.getHTML() might differ slightly from fetchedContent due to parsing
+        // We trust the upstream source if it changes.
+        editor.commands.setContent(fetchedContent);
     }
-  }, [content, editor]);
+  }, [fetchedContent, editor]);
 
   // Polling Logic for Pending Media
   useEffect(() => {
@@ -496,8 +537,17 @@ const TipTapEditor = forwardRef(({ content, onChange, editable = true, onAddImag
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm flex flex-col h-full">
-      {editable && <MenuBar editor={editor} onAddImage={onAddImage} onAddVideo={onAddVideo} onAddAudio={onAddAudio} onAddDocument={onAddDocument} />}
-      <EditorContent editor={editor} className="flex-1 overflow-y-auto" />
+      {isLoadingS3 ? (
+         <div className="flex flex-col items-center justify-center p-12 text-gray-400">
+             <RefreshCw className="animate-spin mb-2" size={24} />
+             <span className="text-sm">Loading content...</span>
+         </div>
+      ) : (
+        <>
+            {editable && <MenuBar editor={editor} onAddImage={onAddImage} onAddVideo={onAddVideo} onAddAudio={onAddAudio} onAddDocument={onAddDocument} />}
+            <EditorContent editor={editor} className="flex-1 overflow-y-auto" />
+        </>
+      )}
     </div>
   );
 });
