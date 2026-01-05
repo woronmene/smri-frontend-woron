@@ -350,20 +350,21 @@ export default function StudentsPage() {
 
         {/* Course selector */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 rounded-lg border border-gray-200 overflow-x-auto max-w-full">
-            {courses.map((course) => (
-              <button
-                key={course.id}
-                onClick={() => setSelectedCourseId(course.id)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${
-                  selectedCourseId === course.id
-                    ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                {course.title}
-              </button>
-            ))}
+          <div className="relative inline-block w-full sm:w-72">
+            <select
+              value={selectedCourseId || ""}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="appearance-none w-full bg-white border border-gray-200 hover:border-gray-300 text-gray-900 font-medium py-2.5 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors shadow-sm cursor-pointer text-sm"
+            >
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+              <ChevronDown size={16} />
+            </div>
           </div>
         </div>
 
@@ -429,10 +430,10 @@ export default function StudentsPage() {
             />
           </div>
 
-          <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
+          {/* <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
             <Filter size={18} />
             Filter Students
-          </button>
+          </button> */}
         </div>
 
         {/* Table */}

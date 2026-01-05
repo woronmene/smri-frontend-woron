@@ -13,7 +13,6 @@ const StudentsTable = ({ students }) => {
               <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-100">Progress</th>
               <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-100">Last Active</th>
               <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-100">Status</th>
-              <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-100 w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -58,11 +57,6 @@ const StudentsTable = ({ students }) => {
                   }`}>
                     {student.status}
                   </span>
-                </td>
-                <td className="py-4 px-6 border-l border-gray-100 text-right">
-                  <button className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors">
-                    <MoreHorizontal size={18} />
-                  </button>
                 </td>
               </tr>
             ))}

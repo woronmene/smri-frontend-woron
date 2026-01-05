@@ -62,7 +62,7 @@ const Sidebar = ({ className, onNavigate }) => {
         name: 'Analytics',
         href: '/dashboard/analytics',
         icon: '/analytics_sidemenu_icon.svg',
-        show: isTeacher || isAdmin,
+        show: false,
     },
     {
       name: 'Settings',

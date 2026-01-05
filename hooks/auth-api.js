@@ -89,6 +89,16 @@ export function useResetPassword() {
   });
 }
 
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (payload) =>
+      apiFetch("/api/auth/password-change", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  });
+}
+
 /* -------------------- PROFILE QUERY -------------------- */
 
 export function useGetProfile(enabled = true) {

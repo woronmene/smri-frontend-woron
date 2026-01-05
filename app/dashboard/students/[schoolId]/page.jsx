@@ -282,10 +282,10 @@ export default function SchoolStudentsPage() {
           />
         </div>
 
-        <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
+        {/* <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-[100px] text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm">
           <Filter size={18} />
           Filter Students
-        </button>
+        </button> */}
       </div>
 
       {/* Table */}
