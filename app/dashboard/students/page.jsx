@@ -147,6 +147,9 @@ export default function StudentsPage() {
       return {
         id: s.user_id,
         name: `${s.first_name} ${s.last_name || ""}`.trim(),
+        firstName: s.first_name,
+        lastName: s.last_name || "",
+        email: s.email,
         course: selectedCourse?.title || effectiveCourse?.title || "Course",
         progress: rawProgress,
         lastActive: progressRecord?.last_completed_at
@@ -175,12 +178,14 @@ export default function StudentsPage() {
   const handleExport = () => {
     if (!filteredStudents || filteredStudents.length === 0) return;
 
-    const headers = ["Name", "Course", "Progress", "Last Active", "Status"];
-    const csvContent = [
+    const headers = ["First Name", "Last Name", "Email", "Course", "Progress", "Last Active", "Status"];
+    const csvContent = "\uFEFF" + [
       headers.join(","),
       ...filteredStudents.map((student) =>
         [
-          `"${student.name}"`,
+          `"${student.firstName}"`,
+          `"${student.lastName}"`,
+          `"${student.email}"`,
           `"${student.course}"`,
           `${student.progress}%`,
           `"${student.lastActive}"`,
@@ -331,13 +336,13 @@ export default function StudentsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
+            {/* <Button
               variant="outline"
               className="bg-white hover:bg-gray-50 text-gray-900 border-gray-200 rounded-[100px] px-5 py-3 shadow-sm h-auto font-medium"
             >
               {currentSchoolName}
               <ChevronDown size={16} className="ml-2 text-gray-400" />
-            </Button>
+            </Button> */}
             <Button 
               onClick={handleExport}
               className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium"
