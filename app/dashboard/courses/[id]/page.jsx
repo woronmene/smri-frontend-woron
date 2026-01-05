@@ -7,6 +7,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import ModuleAccordion from '@/components/dashboard/ModuleAccordion';
 import { AuthContext } from '@/context/AuthContext';
 import { getCourseById } from '@/lib/cms-api';
+import { getStudentCourseProgress } from '@/lib/analytics-api';
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -17,11 +18,29 @@ export default function CourseDetailPage() {
   const isAdmin = user?.role === 'admin' || user?.role === 'smri_admin' || user?.email?.includes('admin');
   const isTeacher = user?.role === 'teacher' || user?.role === 'school_admin' || user?.email?.includes('teacher');
 
+  const userId = user?.user_id || user?.id || user?.userId || null;
+
   const { data: course, isLoading, error } = useQuery({
     queryKey: ['course', id],
     queryFn: () => getCourseById(id),
     enabled: !!id,
   });
+
+  const totalLessons =
+    course?.modules?.reduce(
+      (sum, m) => sum + ((m.lessons || []).length || 0),
+      0
+    ) || 0;
+
+  const { data: studentProgress } = useQuery({
+    queryKey: ['student-course-progress', userId, id],
+    queryFn: () => getStudentCourseProgress(userId, id),
+    enabled: !!id && !!userId && !isAdmin && !isTeacher && totalLessons > 0,
+  });
+
+  const completedCount = studentProgress?.completed_count || 0;
+  const computedProgress =
+    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   if (isLoading) {
     return (
@@ -31,7 +50,7 @@ export default function CourseDetailPage() {
     );
   }
 
-  if (error) {
+  if (error || !course) {
     return (
       <div className="text-center py-12">
         <p className="text-red-500">Error loading course details.</p>
@@ -44,6 +63,11 @@ export default function CourseDetailPage() {
       </div>
     );
   }
+
+  const progressValue =
+    !isAdmin && !isTeacher
+      ? computedProgress || course.progress || 0
+      : course.progress || 0;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -64,16 +88,15 @@ export default function CourseDetailPage() {
              <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-xs ">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${course.progress || 0}%` }}
+                style={{ width: `${progressValue}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-gray-600">{course.progress || 0}% Complete</span>
+            <span className="text-sm font-medium text-gray-600">{progressValue}% Complete</span>
           </div>
         )}
       </div>
 
       <div className="space-y-4">
-        {/* <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Content</h2> */}
         {course.modules.map((module) => (
           <ModuleAccordion key={module.id} module={module} courseId={course.id} />
         ))}

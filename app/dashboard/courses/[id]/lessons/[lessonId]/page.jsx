@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
@@ -16,18 +16,25 @@ import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import LessonContentRenderer from "@/components/dashboard/LessonContentRenderer";
 import { getCourseById } from "@/lib/cms-api";
-import { markLessonComplete } from "@/lib/analytics-api";
+import {
+  markLessonComplete,
+  getStudentCourseProgress,
+} from "@/lib/analytics-api";
 
 export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
   const { id: courseId, lessonId } = params;
   const { user } = useContext(AuthContext);
+  const queryClient = useQueryClient();
 
   const isAdmin =
     user?.role === "admin" || user?.role === "smri_admin" || user?.email?.toLowerCase().includes("admin");
   const isTeacher =
     user?.role === "teacher" || user?.role === "school_admin" || user?.email?.toLowerCase().includes("teacher");
+
+  const userId = user?.user_id || user?.id || user?.userId || null;
+  const schoolId = user?.school_id || null;
 
   const {
     data: course,
@@ -38,6 +45,24 @@ export default function LessonPage() {
     queryFn: () => getCourseById(courseId),
     enabled: !!courseId,
   });
+
+  const totalLessons =
+    course?.modules?.reduce(
+      (sum, m) => sum + ((m.lessons || []).length || 0),
+      0
+    ) || 0;
+
+  const {
+    data: studentProgress,
+  } = useQuery({
+    queryKey: ["student-course-progress", userId, courseId],
+    queryFn: () => getStudentCourseProgress(userId, courseId),
+    enabled: !!courseId && !!userId && !isAdmin && !isTeacher && totalLessons > 0,
+  });
+
+  const completedCount = studentProgress?.completed_count || 0;
+  const progressPercent =
+    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   if (isLoading) {
     return (
@@ -95,17 +120,16 @@ export default function LessonPage() {
 
   const handleMarkAsDone = async () => {
     try {
-      const userId = user?.user_id || user?.id || user?.userId || "mock-student"; 
-      const schoolId = user?.school_id || null;
-
       await markLessonComplete({
-        userId,
+        userId: userId || "mock-student",
         schoolId,
         courseId,
         moduleId: currentLesson.moduleId, 
         lessonId,
       });
-      console.log("Marked lesson as complete");
+      queryClient.invalidateQueries({
+        queryKey: ["student-course-progress", userId, courseId],
+      });
     } catch (err) {
       console.error("Failed to mark lesson complete:", err);
     }
@@ -143,6 +167,20 @@ export default function LessonPage() {
             <Clock size={12} /> 5 min read / watch
           </span>
         </div>
+
+        {!isAdmin && !isTeacher && (
+          <div className="mt-2 flex items-center gap-3">
+            <div className="w-40 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-cyan-500 transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-600">
+              {progressPercent}% complete
+            </span>
+          </div>
+        )}
 
         <h1 className="text-[24px] md:text-[32px] font-bold text-gray-900 mb-4 tracking-tight leading-tight">
           {currentLesson.title}

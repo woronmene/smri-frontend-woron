@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useContext } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useQueries } from "@tanstack/react-query";
 import { deleteCourse, getAllCourses } from "@/lib/cms-api";
 import { useRouter } from "next/navigation";
 import CourseCard from "@/components/dashboard/CourseCard";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, GraduationCap } from "lucide-react";
 import { AuthContext } from "@/context/AuthContext";
+import { getStudentCourseProgress } from "@/lib/analytics-api";
 
 // We move fetchCourses inside the component or pass user role to it
 
@@ -40,6 +41,39 @@ export default function DashboardPage() {
     queryFn: () => getAllCourses(userRole),
   });
 
+  const userId = user?.user_id || user?.id || user?.userId || null;
+  const isStudent = !isAdmin && !isTeacher;
+
+  const progressQueries = useQueries({
+    queries:
+      courses && isStudent && userId
+        ? courses.map((course) => ({
+            queryKey: ["student-course-progress", userId, course.id],
+            queryFn: () => getStudentCourseProgress(userId, course.id),
+            enabled: true,
+          }))
+        : [],
+  });
+
+  const progressByCourseId =
+    courses && isStudent
+      ? courses.reduce((acc, course, index) => {
+          const result = progressQueries[index];
+          const totalLessons =
+            course.modules?.reduce(
+              (sum, m) => sum + ((m.lessons || []).length || 0),
+              0
+            ) || 0;
+          const completedCount = result?.data?.completed_count || 0;
+          const percent =
+            totalLessons > 0
+              ? Math.round((completedCount / totalLessons) * 100)
+              : 0;
+          acc[course.id] = percent;
+          return acc;
+        }, {})
+      : {};
+
   const filteredCourses = courses?.filter((course) => {
     const status = (course.status || "").toLowerCase();
     const audience = (course.audience || "Student");
@@ -71,14 +105,15 @@ export default function DashboardPage() {
         return (
           status === "in-progress" ||
           (status === "published" &&
-            course.progress > 0 &&
-            course.progress < 100)
+            (progressByCourseId[course.id] || course.progress || 0) > 0 &&
+            (progressByCourseId[course.id] || course.progress || 0) < 100)
         );
       }
       if (filter === "completed") {
         return (
           status === "completed" ||
-          (status === "published" && course.progress === 100)
+          (status === "published" &&
+            (progressByCourseId[course.id] || course.progress || 0) === 100)
         );
       }
     }
@@ -191,10 +226,13 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredCourses?.map((course) => {
               const isStudent = !isAdmin && !isTeacher;
+              const effectiveProgress = isStudent
+                ? progressByCourseId[course.id] ?? course.progress ?? 0
+                : course.progress ?? 0;
               return (
                 <CourseCard
                   key={course.id}
-                  course={course}
+                  course={{ ...course, progress: effectiveProgress }}
                   isAdmin={isAdmin}
                   isStudent={isStudent}
                   onDelete={isSmriAdmin ? handleDeleteCourse : undefined}
