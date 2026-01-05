@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export default function TeachersPage() {
   // Define permissions
   const isSmriAdmin = user?.role === "smri_admin" || user?.role === "admin";
   const isSchoolAdmin = user?.role === "school_admin";
-  
+
   // Calculate target view
   const targetSchoolId = isSmriAdmin ? selectedSchoolId : user?.school_id;
 
@@ -36,7 +36,7 @@ export default function TeachersPage() {
   } = useQuery({
     queryKey: ["school-teachers", targetSchoolId],
     queryFn: () => getSchoolTeachers(targetSchoolId),
-    enabled: (isSchoolAdmin || (isSmriAdmin && !!targetSchoolId)),
+    enabled: isSchoolAdmin || (isSmriAdmin && !!targetSchoolId),
   });
 
   if (loading) {
@@ -92,9 +92,9 @@ export default function TeachersPage() {
         </div>
 
         {/* School List Component */}
-        <SchoolList 
-          schools={filteredSchools} 
-          onSelectSchool={(school) => setSelectedSchoolId(school.school_id)} 
+        <SchoolList
+          schools={filteredSchools}
+          onSelectSchool={(school) => setSelectedSchoolId(school.school_id)}
         />
       </div>
     );
@@ -120,23 +120,19 @@ export default function TeachersPage() {
 
     const teachersRaw = teachersData?.items || [];
 
-    // Normalise teacher shape for the table
-    const teachers = useMemo(
-      () =>
-        teachersRaw.map((t) => ({
-          id: t.user_id,
-          name: `${t.first_name} ${t.last_name || ""}`.trim(),
-          email: t.email,
-          role: t.role || "teacher",
-          status: t.is_active ? "Active" : "Inactive",
-          avatar: t.avatar_cdn_url || null,
-        })),
-      [teachersRaw]
-    );
-    
+    // Normalise teacher shape for the table (no hooks here to keep hook order stable)
+    const teachers = teachersRaw.map((t) => ({
+      id: t.user_id,
+      name: `${t.first_name} ${t.last_name || ""}`.trim(),
+      email: t.email,
+      role: t.role || "teacher",
+      status: t.is_active ? "Active" : "Inactive",
+      avatar: t.avatar_cdn_url || null,
+    }));
+
     // Calculate stats
     const totalTeachers = teachers.length;
-    const activeTeachers = teachers.filter(t => t.status === 'Active').length;
+    const activeTeachers = teachers.filter((t) => t.status === "Active").length;
 
     const filteredTeachers = teachers.filter(
       (teacher) =>
@@ -145,8 +141,8 @@ export default function TeachersPage() {
     );
 
     const handleMakeAdmin = (teacherId) => {
-        // Placeholder for future API call
-        alert(`Request to make Teacher ID: ${teacherId} a School Admin`);
+      // Placeholder for future API call
+      alert(`Request to make Teacher ID: ${teacherId} a School Admin`);
     };
 
     return (
@@ -155,50 +151,48 @@ export default function TeachersPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {isSmriAdmin && (
-               <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setSelectedSchoolId(null)}
                 className="mr-2"
-               >
-                 <ArrowLeft size={24} />
-               </Button>
+              >
+                <ArrowLeft size={24} />
+              </Button>
             )}
-            <h1 className="text-3xl font-bold text-gray-900">
-              Teachers
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Teachers</h1>
           </div>
         </div>
 
         {/* Info Card */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-             <div className="space-y-1">
-               <h3 className="text-lg font-semibold text-gray-900">
-                 {isSchoolAdmin ? "School Teachers" : "Teacher Directory"}
-               </h3>
-               <p className="text-sm text-gray-600">
-                 Managing teachers for this school.
-               </p>
-             </div>
-             <div className="flex items-center gap-4">
-               <div className="flex flex-col text-right">
-                 <span className="text-xs uppercase tracking-wide text-gray-400">
-                   Total
-                 </span>
-                 <span className="text-base font-semibold text-gray-900">
-                   {totalTeachers}
-                 </span>
-               </div>
-               <div className="w-px h-8 bg-gray-200" />
-               <div className="flex flex-col text-right">
-                 <span className="text-xs uppercase tracking-wide text-gray-400">
-                   Active
-                 </span>
-                 <span className="text-base font-semibold text-gray-900">
-                   {activeTeachers}
-                 </span>
-               </div>
-             </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {isSchoolAdmin ? "School Teachers" : "Teacher Directory"}
+            </h3>
+            <p className="text-sm text-gray-600">
+              Managing teachers for this school.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col text-right">
+              <span className="text-xs uppercase tracking-wide text-gray-400">
+                Total
+              </span>
+              <span className="text-base font-semibold text-gray-900">
+                {totalTeachers}
+              </span>
+            </div>
+            <div className="w-px h-8 bg-gray-200" />
+            <div className="flex flex-col text-right">
+              <span className="text-xs uppercase tracking-wide text-gray-400">
+                Active
+              </span>
+              <span className="text-base font-semibold text-gray-900">
+                {activeTeachers}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Search */}
@@ -219,7 +213,10 @@ export default function TeachersPage() {
         </div>
 
         {/* Table */}
-        <TeachersTable teachers={filteredTeachers} onMakeAdmin={handleMakeAdmin} />
+        <TeachersTable
+          teachers={filteredTeachers}
+          onMakeAdmin={handleMakeAdmin}
+        />
       </div>
     );
   }
@@ -227,7 +224,9 @@ export default function TeachersPage() {
   // Fallback
   return (
     <div className="flex h-96 items-center justify-center text-gray-500">
-      <p>Teacher management is only available for School Admins and SMRI Admins.</p>
+      <p>
+        Teacher management is only available for School Admins and SMRI Admins.
+      </p>
     </div>
   );
 }
