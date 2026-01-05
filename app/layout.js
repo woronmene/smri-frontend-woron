@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "Social Media First Aid",
-  description: "SMRI Dashboard application",
+  description: "SMRI application",
 };
 
 export default function RootLayout({ children }) {
