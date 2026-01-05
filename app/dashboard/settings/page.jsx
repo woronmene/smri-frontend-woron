@@ -13,15 +13,16 @@ import { useGetSchool, useChangePassword } from "@/hooks/auth-api";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("personal");
 
+  // Determine permissions safely (handle null user)
   const isOrgAdmin = (user?.role || "").toLowerCase() === "school_admin";
   const isSmriAdmin = (user?.role || "").toLowerCase() === "smri_admin";
 
   const { data: schoolData, isLoading: schoolLoading } = useGetSchool(
-    isOrgAdmin || (user && !isSmriAdmin) // Fetch school if org admin OR regular user (student/teacher)
+    !loading && isOrgAdmin
   );
 
   const initialPersonalValues = useMemo(() => {

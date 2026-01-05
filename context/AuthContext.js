@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
     data: school,
     isLoading: schoolLoading,
     error: schoolError,
-  } = useGetSchool();
+  } = useGetSchool(Boolean(token) && isOrg);
 
   useEffect(() => {
     if (schoolError) console.error("School fetch error:", schoolError);
