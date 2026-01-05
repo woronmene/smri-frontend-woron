@@ -35,6 +35,7 @@ export default function StudentsPage() {
   const userRole = isAdmin ? "admin" : "teacher";
 
   const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   // Fetch courses from CMS
   const {
@@ -100,6 +101,103 @@ export default function StudentsPage() {
         : getCourseStudentsProgress(selectedCourseId),
     enabled: !!selectedCourseId && !!targetSchoolId && (isTeacher || isAdmin),
   });
+
+  const currentSchoolName = useMemo(() => {
+    if (isAdmin && selectedSchoolId && schoolsData?.items) {
+      return schoolsData.items.find((s) => s.school_id === selectedSchoolId)?.name;
+    }
+    return user?.school_name || "School Students";
+  }, [isAdmin, selectedSchoolId, schoolsData, user]);
+
+  // Calculate derived student data at top level to ensure hooks stability
+  // and availability for export
+  const filteredStudents = useMemo(() => {
+    if (!courses || courses.length === 0) return [];
+    
+    // Determine effective course/modules/lessons
+    const effectiveCourse = courseDetail || selectedCourse;
+    if (!effectiveCourse) return [];
+
+    const moduleCount = effectiveCourse?.modules?.length || 0;
+    const lessonCount =
+      effectiveCourse?.modules?.reduce(
+        (sum, m) => sum + (m.lessons?.length || 0),
+        0
+      ) || 0;
+
+    // Merge student list with analytics
+    const allStudents = studentsData?.items || [];
+    const analyticsMap = new Map(
+      (analyticsProgress?.students || []).map((s) => [s.user_id, s])
+    );
+
+    const studentsForCourse = allStudents.map((s) => {
+      const progressRecord = analyticsMap.get(s.user_id);
+      
+      const totalLessons = lessonCount || 0;
+      const completedCount = progressRecord?.completed_count || 0;
+      
+      const rawProgress =
+        totalLessons > 0
+          ? Math.round((completedCount / totalLessons) * 100)
+          : 0;
+
+      const completed = totalLessons > 0 && completedCount >= totalLessons;
+
+      return {
+        id: s.user_id,
+        name: `${s.first_name} ${s.last_name || ""}`.trim(),
+        course: selectedCourse?.title || effectiveCourse?.title || "Course",
+        progress: rawProgress,
+        lastActive: progressRecord?.last_completed_at
+          ? new Date(progressRecord.last_completed_at).toLocaleString()
+          : "Not started",
+        status: completed ? "Completed" : progressRecord ? "In progress" : "Not started",
+        moduleCount, // Passing these through if needed for display later, though currently redundant in the table object
+        lessonCount
+      };
+    });
+
+    return studentsForCourse.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.course.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [
+    courses, 
+    courseDetail, 
+    selectedCourse, 
+    studentsData, 
+    analyticsProgress, 
+    searchQuery
+  ]);
+
+  const handleExport = () => {
+    if (!filteredStudents || filteredStudents.length === 0) return;
+
+    const headers = ["Name", "Course", "Progress", "Last Active", "Status"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredStudents.map((student) =>
+        [
+          `"${student.name}"`,
+          `"${student.course}"`,
+          `${student.progress}%`,
+          `"${student.lastActive}"`,
+          `"${student.status}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `students_export_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -208,43 +306,9 @@ export default function StudentsPage() {
         0
       ) || 0;
 
-    // Merge student list with analytics
-    const allStudents = studentsData?.items || [];
-    const analyticsMap = new Map(
-      (analyticsProgress?.students || []).map((s) => [s.user_id, s])
-    );
 
-    const studentsForCourse = allStudents.map((s) => {
-      const progressRecord = analyticsMap.get(s.user_id);
-      
-      const totalLessons = lessonCount || 0;
-      const completedCount = progressRecord?.completed_count || 0;
-      
-      const rawProgress =
-        totalLessons > 0
-          ? Math.round((completedCount / totalLessons) * 100)
-          : 0;
 
-      const completed = totalLessons > 0 && completedCount >= totalLessons;
 
-      return {
-        id: s.user_id,
-        name: `${s.first_name} ${s.last_name || ""}`.trim(),
-        course: selectedCourse?.title || effectiveCourse?.title || "Course",
-        progress: rawProgress,
-        lastActive: progressRecord?.last_completed_at
-          ? new Date(progressRecord.last_completed_at).toLocaleString()
-          : "Not started",
-        status: completed ? "Completed" : progressRecord ? "In progress" : "Not started",
-        avatar: null,
-      };
-    });
-
-    const filteredStudents = studentsForCourse.filter(
-      (student) =>
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.course.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     return (
       <div className="space-y-6 font-sans pb-12">
@@ -271,10 +335,13 @@ export default function StudentsPage() {
               variant="outline"
               className="bg-white hover:bg-gray-50 text-gray-900 border-gray-200 rounded-[100px] px-5 py-3 shadow-sm h-auto font-medium"
             >
-              Greener Field High School
+              {currentSchoolName}
               <ChevronDown size={16} className="ml-2 text-gray-400" />
             </Button>
-            <Button className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium">
+            <Button 
+              onClick={handleExport}
+              className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium"
+            >
               <Download size={18} />
               Export Student Data
             </Button>
@@ -301,19 +368,30 @@ export default function StudentsPage() {
         </div>
 
         {/* Selected course details */}
+        {/* Selected course details */}
         {effectiveCourse && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-gray-900">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div className="space-y-2 flex-2 min-w-0">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
                 {effectiveCourse.title}
               </h3>
-              <p className="text-sm text-gray-600">
-                {effectiveCourse.fullDescription ||
-                  effectiveCourse.description ||
-                  "No description provided yet."}
-              </p>
+              <div className="text-sm text-gray-600">
+                <p className={`${!showFullDescription ? "line-clamp-1" : ""} break-words`}>
+                  {effectiveCourse.fullDescription ||
+                    effectiveCourse.description ||
+                    "No description provided yet."}
+                </p>
+                {(effectiveCourse.fullDescription || effectiveCourse.description)?.length > 100 && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-[#3AD0E3] hover:text-cyan-600 font-medium text-xs mt-1 focus:outline-none"
+                  >
+                    {showFullDescription ? "Less" : "More"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-1 justify-center items-center gap-6 flex-shrink-0 pt-1">
               <div className="flex flex-col text-right">
                 <span className="text-xs uppercase tracking-wide text-gray-400">
                   Modules

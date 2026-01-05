@@ -17,7 +17,7 @@ export default function AuthRightSide() {
 
       </div>
       <div
-        className="bg-[#1A3A3A] flex-3 rounded-b-[20px] flex items-end justify-start"
+        className="bg-[#1A3A3A] flex-3 rounded-b-[20px] flex items-start justify-start"
         // style={{
         //   background: `url("/Vector.svg")`,
         //   backgroundSize: "auto",
@@ -26,22 +26,13 @@ export default function AuthRightSide() {
         // }}
       >
         <div className="p-16 flex flex-col justify-center text-white relative overflow-hidden">
-          <div className="flex items-center space-x-2 mb-6 z-10">
-            <Image
-              src="/indicator.svg"
-              alt="indicator.svg"
-              width={50}
-              height={50}
-              className="h-auto w-auto"
-            />
-          </div>
-          <h2 className="text-[48px] font-bold leading-tight mb-4 z-10">
-            Learning Insights <br /> Tailored for You
+       
+          <h2 className="text-[54px] font-medium leading-tight mb-4 z-10">
+              Social Media First Aid
           </h2>
-          <p className="text-[#E8EBE6] max-w-md z-10">
-            Gain personalized recommendations and progress updates based on your
-            learning goals. SMRI helps you stay on track and make your study
-            sessions more effective.
+          <p className="text-[#E8EBE6] text-[30px] max-w-md z-10">
+          
+Awareness, balance, and healthier digital habits
           </p>
         </div>
       </div>

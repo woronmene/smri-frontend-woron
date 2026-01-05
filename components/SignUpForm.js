@@ -335,7 +335,7 @@ export default function SignUpForm() {
 
         {/* Accounty role for decktop*/}
         <div className="flex flex-col items-start gap-2 mb-4 md:hidden">
-          <Label className="text-sm font-medium">Accounty Role</Label>
+          <Label className="text-sm font-medium">Role</Label>
           <ToggleGroup
             type="single"
             value={form.getValues("accountRole")}

@@ -29,9 +29,7 @@ export default function LegalLayout({ children }) {
         </div>
       </main>
 
-      <footer className="py-8 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} SMRI. All rights reserved.
-      </footer>
+
     </div>
   );
 }

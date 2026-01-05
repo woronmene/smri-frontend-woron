@@ -1,6 +1,7 @@
 import { Providers } from "./providers";
 import './globals.css';
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "SMRI - Smart Medical Research Institute",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
       <body>
         <Providers>
           {children}
+          <Footer />
           <Toaster />
         </Providers>
       </body>

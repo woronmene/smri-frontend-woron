@@ -13,231 +13,255 @@ export default function TermsOfServicePage() {
         <strong>Last Updated:</strong> January 1, 2026
       </p>
 
+      {/* Intro */}
       <section className="space-y-4">
         <p>
           These Terms of Service (<strong>“Terms”</strong>) govern access to and use of the
           Social Media Research Institute LLC Learning Management System, including all
-          applications, websites, curriculum, training materials, certifications, software,
-          analytics tools, and related services (collectively, the <strong>“Platform”</strong>).
+          applications, websites, curriculum, training materials, software, analytics tools,
+          certifications, and related services (collectively, the <strong>“Platform”</strong>).
         </p>
 
         <p>
           The Platform is operated by <strong>Social Media Research Institute LLC</strong>
-          (<strong>“SMRI,” “we,” “us,” or “our”</strong>).
+          (<strong>“SMRI,” “Provider,” “we,” “us,” or “our”</strong>).
         </p>
       </section>
 
+      {/* 1 */}
       <section className="space-y-4">
-        <h3 className="font-bold">1. Authoritative Language</h3>
+        <h3 className="font-bold">1. Disclaimer and Limitation of Liability</h3>
         <p>
-          These Terms are drafted in the <strong>English language</strong>. Any translations
-          are provided for convenience only.
+          SMRI provides community health education addressing mental health,
+          behavioral health, and supportive services. Social Media First Aid is
+          <strong> not an offer of clinical care, diagnosis, or crisis intervention</strong>.
         </p>
         <p>
-          In the event of any conflict or inconsistency between versions, the
-          <strong> English-language version shall govern</strong> to the maximum extent
-          permitted by law.
+          The Platform is for informational purposes only and does not substitute
+          professional help. Participation does not create a therapist-client or
+          provider relationship.
         </p>
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="font-bold">2. Acceptance and Binding Effect</h3>
-        <p>
-          By accessing, browsing, registering for, or using the Platform, you
-          (<strong>“User”</strong>) confirm that you have read, understood, and agree to be
-          bound by these Terms and the <strong>SMRI Privacy Policy</strong>, which is
-          incorporated by reference.
-        </p>
-
-        <p>
-          If you use the Platform on behalf of a school, university, nonprofit, government
-          entity, or other organization (<strong>“Institution”</strong>), you represent that
-          you have the legal authority to bind that Institution to these Terms.
-        </p>
-
         <p className="font-semibold">
-          If you do not agree to these Terms, you may not access or use the Platform.
+          If you are in crisis, contact emergency services or a healthcare provider immediately.
         </p>
       </section>
 
+      {/* 2 */}
       <section className="space-y-4">
-        <h3 className="font-bold">3. Educational Purpose and Disclaimer</h3>
+        <h3 className="font-bold">2. Introduction; Acceptance; Binding Effect</h3>
         <p>
-          The Platform provides <strong>community health education</strong> related to mental
-          health awareness, behavioral health, digital literacy, social media awareness,
-          digital citizenship, and technology wellbeing.
+          By accessing or using the Platform, you (<strong>“User”</strong>) acknowledge
+          that you have read, understood, and agree to be bound by these Terms and
+          the SMRI Privacy Policy.
         </p>
-
         <p>
-          <strong>The Platform is strictly educational and informational.</strong>
+          If you act on behalf of an institution (<strong>“Institution”</strong>), you
+          represent that you have authority to bind that Institution.
         </p>
+        <p className="font-semibold">
+          If you do not agree, you may not access or use the Platform.
+        </p>
+      </section>
 
+      {/* 3 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">3. Purpose and Educational Nature of the Platform</h3>
         <p>
-          The Platform does <strong>not</strong>:
+          The Platform is intended solely for educational, preventative, instructional,
+          and research-informed purposes related to digital literacy, social media
+          awareness, online behavior, and technology wellbeing.
         </p>
-
         <ul>
-          <li>Provide medical, psychological, psychiatric, or therapeutic services</li>
-          <li>Diagnose, treat, or prevent any condition</li>
-          <li>Provide crisis intervention or emergency services</li>
-          <li>Create a therapist-client or provider relationship</li>
+          <li>No medical or mental health services</li>
+          <li>No diagnosis or treatment</li>
+          <li>No crisis or emergency services</li>
+          <li>No legal or professional advice</li>
         </ul>
+      </section>
 
-        <p className="font-semibold">
-          If you are in crisis, contact emergency services or a qualified healthcare provider
-          immediately.
+      {/* 4 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">4. User Categories; Role-Based Access Controls</h3>
+        <p>
+          Access is governed by <strong>role-based access controls (RBAC)</strong>
+          determined by the Institution.
+        </p>
+        <ul>
+          <li><strong>Students:</strong> Access assigned educational content only</li>
+          <li><strong>Teachers:</strong> Assign content and view progress</li>
+          <li><strong>Administrators:</strong> Manage accounts and analytics</li>
+          <li><strong>Trainers:</strong> Access certification and training materials</li>
+        </ul>
+      </section>
+
+      {/* 5 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">5. Eligibility; Age-Based Access; Minors</h3>
+        <p>
+          Children under <strong>thirteen (13)</strong> may not independently create accounts.
+          Institutions must obtain required parental or guardian consent.
         </p>
       </section>
 
+      {/* 6 */}
       <section className="space-y-4">
-        <h3 className="font-bold">4. User Roles and Access Controls</h3>
+        <h3 className="font-bold">6. Account Registration; Authentication; Security</h3>
         <p>
-          The Platform uses <strong>role-based access controls</strong> determined by the
-          Institution.
-        </p>
-
-        <p>
-          Roles may include students, teachers, administrators, and certified trainers.
-          SMRI does not control role assignments and relies on Institutions to manage access
-          appropriately.
+          Accounts use institution-approved authentication. Users must protect
+          credentials and may not share access.
         </p>
       </section>
 
+      {/* 7 */}
       <section className="space-y-4">
-        <h3 className="font-bold">5. Eligibility and Minors</h3>
-        <p>
-          Children under the age of <strong>thirteen (13)</strong> may not independently
-          create accounts.
-        </p>
-
-        <p>
-          Access for minors must be provisioned by the Institution, which represents that it
-          has obtained all required parental or guardian consents under applicable laws.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="font-bold">6. Account Security</h3>
-        <p>
-          Users are responsible for maintaining the confidentiality of their login
-          credentials and for all activity conducted under their accounts.
-        </p>
-
-        <p>
-          SMRI may suspend or terminate accounts to protect security, enforce these Terms,
-          or comply with legal obligations.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="font-bold">7. Acceptable Use</h3>
-        <p>
-          Users may <strong>not</strong>:
-        </p>
-
+        <h3 className="font-bold">7. Acceptable Use; Prohibited Conduct</h3>
         <ul>
           <li>Circumvent security or access controls</li>
-          <li>Misuse or exploit the Platform</li>
-          <li>Upload unlawful, harmful, or abusive content</li>
-          <li>Reverse engineer or interfere with Platform operations</li>
-          <li>Misrepresent credentials or authority</li>
+          <li>Reverse engineer or exploit the Platform</li>
+          <li>Upload unlawful or abusive content</li>
+          <li>Use for surveillance or advertising</li>
         </ul>
+      </section>
 
+      {/* 8 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">8. Curriculum; Training Materials; Intellectual Property</h3>
         <p>
-          Institutions are responsible for supervising user conduct and enforcing
-          acceptable use policies.
+          All Platform materials are the exclusive intellectual property of SMRI or
+          its licensors. Use is limited to internal educational purposes only.
         </p>
       </section>
 
+      {/* 9 */}
       <section className="space-y-4">
-        <h3 className="font-bold">8. Intellectual Property</h3>
+        <h3 className="font-bold">9. Student Data; Assessments; Analytics</h3>
         <p>
-          All curriculum, training materials, software, methodologies, trademarks, and
-          content are the <strong>exclusive intellectual property of SMRI</strong> or its
-          licensors.
-        </p>
-
-        <p>
-          A limited, non-exclusive, non-transferable license is granted solely for internal
-          educational use during the applicable term.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="font-bold">9. Student Data and Analytics</h3>
-        <p>
-          The Platform may collect participation data, assessment responses, reflections,
-          and engagement metrics for educational and informational purposes only.
-        </p>
-
-        <p className="font-semibold">
-          SMRI does not sell student data, use it for advertising, or create commercial
+          SMRI does not sell student data, use it for advertising, or create
           behavioral profiles.
         </p>
       </section>
 
+      {/* 10 */}
       <section className="space-y-4">
         <h3 className="font-bold">10. Automated and AI-Assisted Features</h3>
         <p>
-          SMRI may use automated or AI-assisted tools to support curriculum sequencing,
-          analytics, and platform performance.
-        </p>
-
-        <p>
-          These tools are <strong>advisory, non-diagnostic, and subject to human oversight</strong>.
+          Automated tools are advisory only, non-diagnostic, and subject to
+          human oversight.
         </p>
       </section>
 
+      {/* 11 */}
       <section className="space-y-4">
-        <h3 className="font-bold">11. Disclaimer of Warranties</h3>
+        <h3 className="font-bold">11. Institutional Responsibilities</h3>
+        <ul>
+          <li>User provisioning and supervision</li>
+          <li>Consent management</li>
+          <li>Legal compliance</li>
+        </ul>
+      </section>
+
+      {/* 12 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">12. International Use</h3>
+        <p>
+          Institutions are responsible for lawful use in their jurisdictions.
+        </p>
+      </section>
+
+      {/* 13 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">13. Disclaimer of Warranties</h3>
         <p className="font-semibold">
           THE PLATFORM IS PROVIDED “AS IS” AND “AS AVAILABLE.”
         </p>
-
-        <p>
-          To the maximum extent permitted by law, SMRI disclaims all warranties, express or
-          implied, including warranties of merchantability, fitness for a particular purpose,
-          and non-infringement.
-        </p>
       </section>
 
+      {/* 14 */}
       <section className="space-y-4">
-        <h3 className="font-bold">12. Limitation of Liability</h3>
+        <h3 className="font-bold">14. Limitation of Liability</h3>
         <p className="font-semibold">
-          To the maximum extent permitted by law, SMRI shall not be liable for indirect,
-          incidental, consequential, special, or punitive damages.
+          SMRI SHALL NOT BE LIABLE FOR INDIRECT OR CONSEQUENTIAL DAMAGES.
         </p>
       </section>
 
+      {/* 15 */}
       <section className="space-y-4">
-        <h3 className="font-bold">13. Termination</h3>
+        <h3 className="font-bold">15. Termination</h3>
         <p>
-          SMRI may suspend or terminate access to the Platform for violations of these
-          Terms, institutional instructions, or applicable law.
+          SMRI may suspend or terminate access for violations of these Terms.
         </p>
       </section>
 
+      {/* 16 */}
       <section className="space-y-4">
-        <h3 className="font-bold">14. Governing Law</h3>
+        <h3 className="font-bold">16. Governing Law</h3>
         <p>
-          These Terms are governed by the laws of the <strong>State of Delaware, USA</strong>,
-          without regard to conflict-of-law principles.
+          Governed by the laws of the <strong>State of Delaware, USA</strong>.
         </p>
       </section>
 
+      {/* 17 */}
       <section className="space-y-4">
-        <h3 className="font-bold">15. Changes to These Terms</h3>
+        <h3 className="font-bold">17. Acceptable Use Policy – Detailed Provisions</h3>
         <p>
-          SMRI may modify these Terms at its discretion. Material changes will be
-          communicated at least <strong>thirty (30) days</strong> in advance, except where
-          immediate changes are required for legal or security reasons.
+          Users must not engage in security violations, impersonation, or content abuse.
         </p>
       </section>
 
+      {/* 18 */}
       <section className="space-y-4">
-        <h3 className="font-bold">16. Contact</h3>
+        <h3 className="font-bold">18. Intellectual Property Rights – Comprehensive Framework</h3>
         <p>
-          <strong>Social Media Research Institute LLC</strong> <br />
+          All SMRI intellectual property is protected under U.S. and international law.
+        </p>
+      </section>
+
+      {/* 19 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">19. Indemnification</h3>
+        <p>
+          Users agree to indemnify and hold SMRI harmless from claims arising from use
+          of the Platform.
+        </p>
+      </section>
+
+      {/* 20 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">20. Amendments and Modifications</h3>
+        <p>
+          Material changes will be communicated at least thirty (30) days in advance.
+        </p>
+      </section>
+
+      {/* 21 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">21. Entire Agreement</h3>
+        <p>
+          These Terms constitute the entire agreement between SMRI and the Institution.
+        </p>
+      </section>
+
+      {/* 22 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">22. Severability</h3>
+        <p>
+          Invalid provisions shall be modified or severed without affecting remaining Terms.
+        </p>
+      </section>
+
+      {/* 23 */}
+      <section className="space-y-4">
+        <h3 className="font-bold">23. Waiver</h3>
+        <p>
+          Failure to enforce any provision does not constitute a waiver.
+        </p>
+      </section>
+
+      {/* Contact */}
+      <section className="space-y-4">
+        <h3 className="font-bold">Contact</h3>
+        <p>
+          <strong>Social Media Research Institute LLC</strong><br />
           Email: <a href="mailto:legal@smri.world">legal@smri.world</a>
         </p>
       </section>
