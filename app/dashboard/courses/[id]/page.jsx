@@ -39,6 +39,10 @@ export default function CourseDetailPage() {
   });
 
   const completedCount = studentProgress?.completed_count || 0;
+  const completedLessonIds =
+    (!isAdmin && !isTeacher
+      ? new Set(studentProgress?.completed_lesson_ids || [])
+      : new Set());
   const computedProgress =
     totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
@@ -98,7 +102,12 @@ export default function CourseDetailPage() {
 
       <div className="space-y-4">
         {course.modules.map((module) => (
-          <ModuleAccordion key={module.id} module={module} courseId={course.id} />
+          <ModuleAccordion
+            key={module.id}
+            module={module}
+            courseId={course.id}
+            completedLessonIds={completedLessonIds}
+          />
         ))}
       </div>
     </div>

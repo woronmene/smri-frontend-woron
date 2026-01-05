@@ -100,6 +100,7 @@ export function useGetProfile(enabled = true) {
 }
 
 export function useGetSchool(enabled = true) {
+  console.log("called the map function")
   return useQuery({
     queryKey: ["school"],
     queryFn: () => apiFetch("/api/auth/school"),

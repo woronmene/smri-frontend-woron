@@ -7,9 +7,16 @@ export default function LegalLayout({ children }) {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-             <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm">S</div>
-             <span className="font-bold text-gray-900 tracking-tight">SMRI</span>
+             {/* <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm">S</div> */}
+             <Image
+                      src="/smri_logo.svg"
+                      alt="smri logo"
+                      width={160}
+                      height={50}
+                      className="h-auto w-auto"
+                    />
           </Link>
+            
           <nav className="flex gap-6 text-sm font-medium text-gray-600">
              <Link href="/auth/sign-up" className="hover:text-gray-900 transition-colors">Sign Up</Link>
           </nav>

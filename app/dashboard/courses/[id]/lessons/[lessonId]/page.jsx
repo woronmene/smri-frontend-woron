@@ -12,7 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import LessonContentRenderer from "@/components/dashboard/LessonContentRenderer";
 import { getCourseById } from "@/lib/cms-api";
@@ -20,6 +20,7 @@ import {
   markLessonComplete,
   getStudentCourseProgress,
 } from "@/lib/analytics-api";
+import { toast } from "sonner";
 
 export default function LessonPage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function LessonPage() {
   const { id: courseId, lessonId } = params;
   const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
+  const [marking, setMarking] = useState(false);
 
   const isAdmin =
     user?.role === "admin" || user?.role === "smri_admin" || user?.email?.toLowerCase().includes("admin");
@@ -63,6 +65,8 @@ export default function LessonPage() {
   const completedCount = studentProgress?.completed_count || 0;
   const progressPercent =
     totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const completedLessonIds = studentProgress?.completed_lesson_ids || [];
+  const isCompleted = completedLessonIds.includes(lessonId);
 
   if (isLoading) {
     return (
@@ -119,19 +123,30 @@ export default function LessonPage() {
   }
 
   const handleMarkAsDone = async () => {
+    if (!userId) {
+      toast.error("Unable to mark lesson as complete.");
+      return;
+    }
+
     try {
+      setMarking(true);
+
       await markLessonComplete({
-        userId: userId || "mock-student",
+        userId,
         schoolId,
         courseId,
-        moduleId: currentLesson.moduleId, 
+        moduleId: currentLesson.moduleId,
         lessonId,
       });
       queryClient.invalidateQueries({
         queryKey: ["student-course-progress", userId, courseId],
       });
+      toast.success("Lesson marked as complete.");
     } catch (err) {
       console.error("Failed to mark lesson complete:", err);
+      toast.error("Failed to mark lesson as done.");
+    } finally {
+      setMarking(false);
     }
   };
 
@@ -217,12 +232,30 @@ export default function LessonPage() {
 
         <div className="flex items-center gap-3">
           {!isAdmin && !isTeacher && (
-            <button
-              onClick={handleMarkAsDone}
-              className="flex items-center gap-2 bg-[#4ADE80] hover:bg-green-500 text-black px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-colors"
-            >
-              <span>Mark as done</span>
-            </button>
+            isCompleted ? (
+              <button
+                disabled
+                className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-6 py-3 rounded-full text-sm font-medium cursor-default"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Completed</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleMarkAsDone}
+                disabled={marking}
+                className="flex items-center gap-2 bg-[#4ADE80] hover:bg-green-500 disabled:opacity-70 disabled:cursor-not-allowed text-black px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-colors"
+              >
+                {marking ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Marking...</span>
+                  </>
+                ) : (
+                  <span>Mark as done</span>
+                )}
+              </button>
+            )
           )}
 
           {nextLesson ? (

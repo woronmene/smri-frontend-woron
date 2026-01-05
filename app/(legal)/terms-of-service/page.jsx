@@ -6,7 +6,7 @@ export const metadata = {
 export default function TermsOfServicePage() {
   return (
     <div className="prose prose-gray max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-cyan-600 space-y-10">
-      <h1>Terms of Service</h1>
+      <h1 className="font-bold text-2xl">Terms of Service</h1>
 
       <p className="lead border-b border-gray-100 pb-6 mb-8 text-xl text-gray-500 font-medium">
         <strong>Effective Date:</strong> January 1, 2026 <br />

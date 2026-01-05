@@ -17,9 +17,13 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
 
   const isOrgAdmin = (user?.role || "").toLowerCase() === "school_admin";
-  
-  // Fetch school details
-  const { data: schoolData, isLoading: schoolLoading } = useGetSchool();
+  const isSmriAdmin = (user?.role || "").toLowerCase() === "smri_admin";
+
+  const { data: schoolData, isLoading: schoolLoading } = useGetSchool(
+    isOrgAdmin && !isSmriAdmin
+  );
+
+  console.log(schoolData, "schoolData");
 
   const initialPersonalValues = useMemo(
     () => ({
@@ -33,10 +37,10 @@ export default function SettingsPage() {
     }),
     [user]
   );
-  
+
   // Update form when user/school data loads
   useEffect(() => {
-     setPersonalForm(initialPersonalValues);
+    setPersonalForm(initialPersonalValues);
   }, [initialPersonalValues]);
 
   const [personalForm, setPersonalForm] = useState(initialPersonalValues);
@@ -68,8 +72,8 @@ export default function SettingsPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     updateProfileMutation.mutate({
-        first_name: personalForm.firstName,
-        last_name: personalForm.lastName,
+      first_name: personalForm.firstName,
+      last_name: personalForm.lastName,
     });
   };
 
@@ -110,6 +114,7 @@ export default function SettingsPage() {
             onChange={handlePersonalChange}
             user={user}
             isOrgAdmin={isOrgAdmin}
+            isSmriAdmin={isSmriAdmin}
             schoolData={schoolData}
             schoolLoading={schoolLoading}
           />
@@ -124,6 +129,7 @@ function PersonalInfoForm({
   onChange,
   user,
   isOrgAdmin,
+  isSmriAdmin,
   schoolData,
   schoolLoading,
 }) {
@@ -174,26 +180,30 @@ function PersonalInfoForm({
 
         {/* First & Last Name */}
         <div className="flex flex-col md:flex-row gap-6 pb-8 border-b border-gray-100">
-           <div className="flex-1">
-              <label className="block text-gray-500 font-medium text-sm mb-2">First Name</label>
-              <Input
-                name="firstName"
-                value={values.firstName}
-                onChange={onChange}
-                placeholder="Johny"
-                className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-              />
-           </div>
-           <div className="flex-1">
-              <label className="block text-gray-500 font-medium text-sm mb-2">Last Name</label>
-              <Input
-                name="lastName"
-                value={values.lastName}
-                onChange={onChange}
-                placeholder="Jackson"
-                className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
-              />
-           </div>
+          <div className="flex-1">
+            <label className="block text-gray-500 font-medium text-sm mb-2">
+              First Name
+            </label>
+            <Input
+              name="firstName"
+              value={values.firstName}
+              onChange={onChange}
+              placeholder="Johny"
+              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-gray-500 font-medium text-sm mb-2">
+              Last Name
+            </label>
+            <Input
+              name="lastName"
+              value={values.lastName}
+              onChange={onChange}
+              placeholder="Jackson"
+              className="w-full rounded-xl border-gray-200 bg-white px-4 py-6 text-base focus-visible:ring-cyan-500"
+            />
+          </div>
         </div>
 
         {/* Email */}
@@ -213,29 +223,32 @@ function PersonalInfoForm({
           </div>
         </div>
 
-        {/* School / Organization information */}
-        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-            {isOrgAdmin ? "Organization" : "School"} Information
-          </label>
-          <div className="flex-1 space-y-2">
-            <p className="text-gray-900 text-base">
-              {schoolData?.name || values.school || "—"}
-            </p>
-            {isOrgAdmin && schoolData?.invite_code && (
-               <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg inline-block">
+        {!isSmriAdmin && (
+          <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
+            <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+              {isOrgAdmin ? "Organization" : "School"} Information
+            </label>
+            <div className="flex-1 space-y-2">
+              <p className="text-gray-900 text-base">
+                {schoolData?.name || "—"}
+              </p>
+              {isOrgAdmin && schoolData?.invite_code && (
+                <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg inline-block">
                   <p className="text-xs text-gray-500 mb-1">Invite Code</p>
-                  <code className="text-sm font-bold text-cyan-600">{schoolData.invite_code}</code>
-               </div>
-            )}
-            {schoolLoading && <span className="text-xs text-gray-400">Loading school details...</span>}
+                  <code className="text-sm font-bold text-cyan-600">
+                    {schoolData.invite_code}
+                  </code>
+                </div>
+              )}
+              {schoolLoading && (
+                <span className="text-xs text-gray-400">
+                  Loading school details...
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-
-
+        )}
       </div>
     </div>
   );
 }
-
- 

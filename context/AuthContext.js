@@ -29,9 +29,18 @@ export function AuthProvider({ children }) {
   );
 
   // Fetch school profile for organization accounts
-  const { data: school, isLoading: schoolLoading } = useGetSchool(
-    Boolean(token) && isOrg
-  );
+  console.log("AuthContext Debug:", { token: Boolean(token), accountType, isOrg });
+  const {
+    data: school,
+    isLoading: schoolLoading,
+    error: schoolError,
+  } = useGetSchool(Boolean(token) && isOrg);
+
+  useEffect(() => {
+    if (schoolError) console.error("School fetch error:", schoolError);
+  }, [schoolError]);
+
+  console.log(school, "school");
 
   const derivedUser = isOrg
     ? school
