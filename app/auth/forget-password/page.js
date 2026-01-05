@@ -11,8 +11,8 @@ export default function Page() {
         <nav className="flex-1 flex justify-between items-center bg-white px-8 min-h-20 lg:border-b lg:border-gray-200 lg:shadow">
           {/* Logo */}
           <Image
-            src="/SMRI_logo.svg"
-            alt="SMRI logo"
+            src="/smri_logo.svg"
+            alt="smri logo"
             width={160}
             height={50}
             className="h-auto w-auto"

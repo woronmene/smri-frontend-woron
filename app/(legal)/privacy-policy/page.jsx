@@ -521,6 +521,401 @@ export default function PrivacyPolicyPage() {
     <a href="mailto:privacy@smri.world">privacy@smri.world</a>
   </p>
 </section>
+
+{/* Additional Comprehensive Provisions */}
+<section className="space-y-4">
+  <h3 className="font-bold">Additional Comprehensive Provisions</h3>
+</section>
+
+{/* 10. Data Subject Rights — Comprehensive Framework */}
+<section className="space-y-4">
+  <h3 className="font-bold">
+    10. Data Subject Rights — Comprehensive Framework
+  </h3>
+
+  <p>
+    Depending on the applicable jurisdiction and the specific legal framework
+    governing the processing of Personal Data, individuals (data subjects) may
+    be entitled to exercise various privacy rights.
+  </p>
+
+  <p>
+    SMRI is committed to facilitating the exercise of these rights in a timely,
+    transparent, and legally compliant manner, in coordination with
+    Institutions where appropriate.
+  </p>
+
+  <p className="font-semibold">
+    10.1 Rights Under GDPR, UK GDPR, and Similar Frameworks
+  </p>
+
+  <p>
+    Under the GDPR, UK GDPR, and similar comprehensive data protection
+    frameworks, data subjects have the following rights:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Right of Access (Article 15 GDPR):</strong> The right to obtain
+      confirmation as to whether Personal Data is being processed and to access
+      that data
+    </li>
+    <li>
+      <strong>Right to Rectification (Article 16 GDPR):</strong> The right to
+      correct inaccurate or incomplete Personal Data
+    </li>
+    <li>
+      <strong>
+        Right to Erasure / Right to Be Forgotten (Article 17 GDPR):
+      </strong>{" "}
+      The right to obtain deletion of Personal Data under specified
+      circumstances
+    </li>
+    <li>
+      <strong>
+        Right to Restriction of Processing (Article 18 GDPR):
+      </strong>{" "}
+      The right to restrict or limit processing under certain conditions
+    </li>
+    <li>
+      <strong>Right to Data Portability (Article 20 GDPR):</strong> The right to
+      receive Personal Data in a structured, commonly used, and machine-readable
+      format and transmit it to another controller
+    </li>
+    <li>
+      <strong>Right to Object (Article 21 GDPR):</strong> The right to object to
+      processing based on legitimate interests, direct marketing, or research
+      purposes
+    </li>
+    <li>
+      <strong>
+        Rights Related to Automated Decision-Making and Profiling (Article 22
+        GDPR):
+      </strong>{" "}
+      The right not to be subject to decisions based solely on automated
+      processing producing legal or similarly significant effects
+    </li>
+  </ul>
+
+  <p className="font-semibold">
+    10.2 Rights Under CCPA/CPRA and U.S. State Privacy Laws
+  </p>
+
+  <p>
+    Under the California Consumer Privacy Act (CCPA), California Privacy Rights
+    Act (CPRA), and similar U.S. state privacy laws, consumers have the following
+    rights:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Right to Know:</strong> The right to know what Personal Information
+      is collected, used, shared, or sold
+    </li>
+    <li>
+      <strong>Right to Access:</strong> The right to request and receive copies
+      of specific Personal Information
+    </li>
+    <li>
+      <strong>Right to Delete:</strong> The right to request deletion of Personal
+      Information, subject to exceptions
+    </li>
+    <li>
+      <strong>Right to Correct:</strong> The right to correct inaccurate Personal
+      Information
+    </li>
+    <li>
+      <strong>Right to Opt-Out of Sale or Sharing:</strong> The right to opt out
+      of the sale or sharing of Personal Information
+    </li>
+    <li>
+      <strong>
+        Right to Limit Use of Sensitive Personal Information:
+      </strong>{" "}
+      The right to limit use and disclosure
+    </li>
+    <li>
+      <strong>Right to Non-Discrimination:</strong> The right not to be
+      discriminated against for exercising privacy rights
+    </li>
+  </ul>
+
+  <p className="font-semibold">10.3 Exercising Data Subject Rights</p>
+
+  <p>
+    To exercise any of the rights described in this section, individuals may
+    submit a request to{" "}
+    <a href="mailto:privacy@smri.world">privacy@smri.world</a>. SMRI will:
+  </p>
+
+  <ul>
+    <li>Verify the identity of the requestor</li>
+    <li>
+      Determine whether the request relates to Student Data (subject to
+      Institution control) or other categories of Personal Data
+    </li>
+    <li>
+      Coordinate with the Institution where Student Data or Educational Records
+      are involved
+    </li>
+    <li>
+      Respond within statutory timeframes (generally 30–45 days, with possible
+      extensions)
+    </li>
+    <li>
+      Provide clear information about any exceptions or legal bases for denying
+      a request
+    </li>
+  </ul>
+</section>
+
+{/* 11. Data Sharing, Disclosure, and Third-Party Relationships */}
+<section className="space-y-4">
+  <h3 className="font-bold">
+    11. Data Sharing, Disclosure, and Third-Party Relationships
+  </h3>
+
+  <p>
+    SMRI discloses Personal Data only to the extent necessary to deliver the
+    Platform, fulfill legal obligations, protect rights and safety, and operate
+    the business in accordance with applicable law and contractual commitments.
+  </p>
+
+  <p className="font-semibold">11.1 Disclosures to Institutions</p>
+
+  <p>
+    Personal Data, including Student Data and Educational Records, is made
+    available to authorized users within the Institution in accordance with
+    role-based permissions and legitimate educational interests.
+  </p>
+
+  <p className="font-semibold">11.2 Service Providers and Subprocessors</p>
+
+  <p>
+    SMRI may engage third-party service providers, vendors, subprocessors, and
+    business partners to support Platform operations, including:
+  </p>
+
+  <ul>
+    <li>Cloud infrastructure and hosting providers</li>
+    <li>Data analytics and business intelligence platforms</li>
+    <li>Customer support and help desk systems</li>
+    <li>Email and communications service providers</li>
+    <li>Security monitoring and threat detection services</li>
+    <li>Payment processors (if applicable)</li>
+  </ul>
+
+  <p>All service providers are bound by written agreements that:</p>
+
+  <ul>
+    <li>Limit processing to documented instructions from SMRI</li>
+    <li>
+      Require confidentiality commitments from personnel with access to Personal
+      Data
+    </li>
+    <li>Mandate implementation of appropriate security measures</li>
+    <li>
+      Prohibit unauthorized use, disclosure, or retention of Personal Data
+    </li>
+    <li>
+      Require assistance with data subject rights requests, security incidents,
+      and compliance obligations
+    </li>
+  </ul>
+</section>
+{/* 12. International Data Transfers and Cross-Border Processing */}
+<section className="space-y-4">
+  <h3 className="font-bold">
+    12. International Data Transfers and Cross-Border Processing
+  </h3>
+
+  <p>
+    The Platform is designed to serve educational institutions globally. As a
+    result, Personal Data may be transferred to, processed in, or stored in
+    countries and jurisdictions outside the data subject&apos;s country of
+    residence, including jurisdictions that may not provide the same level of
+    data protection.
+  </p>
+
+  <p className="font-semibold">12.1 Safeguards for International Transfers</p>
+
+  <p>
+    SMRI implements appropriate safeguards to ensure lawful and secure
+    cross-border transfers of Personal Data, including:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Standard Contractual Clauses (SCCs):</strong> European
+      Commission-approved Standard Contractual Clauses, UK International Data
+      Transfer Agreement/Addendum, or similar mechanisms
+    </li>
+    <li>
+      <strong>Adequacy Decisions:</strong> Reliance on adequacy decisions issued
+      by competent authorities (e.g., EU–US Data Privacy Framework, where
+      applicable)
+    </li>
+    <li>
+      <strong>Binding Corporate Rules:</strong> Internal data protection policies
+      and procedures
+    </li>
+    <li>
+      <strong>Technical Safeguards:</strong> Encryption in transit and at rest,
+      pseudonymization, and access controls
+    </li>
+    <li>
+      <strong>Contractual Commitments:</strong> Written agreements with data
+      importers requiring equivalent protection
+    </li>
+  </ul>
+</section>
+
+{/* 13. Data Retention, Archival, and Deletion */}
+<section className="space-y-4">
+  <h3 className="font-bold">13. Data Retention, Archival, and Deletion</h3>
+
+  <p>
+    Personal Data is retained only for as long as necessary to fulfill the
+    purposes for which it was collected, comply with legal obligations, resolve
+    disputes, enforce agreements, maintain security, and meet contractual
+    commitments.
+  </p>
+
+  <p className="font-semibold">13.1 Retention Periods</p>
+
+  <p>
+    Retention periods vary based on data category, legal requirements, and
+    institutional agreements:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Student Data and Educational Records:</strong> Retained in
+      accordance with institutional agreements, FERPA requirements, state
+      education record retention laws, and institutional retention schedules
+    </li>
+    <li>
+      <strong>Account and Authentication Data:</strong> Retained for the duration
+      of the account’s active status plus applicable grace period
+    </li>
+    <li>
+      <strong>Security and Audit Logs:</strong> Retained as required by security
+      best practices, compliance obligations, and legal requirements (typically
+      1–7 years)
+    </li>
+    <li>
+      <strong>Compliance and Legal Records:</strong> Retained as required by law,
+      regulation, or legal hold
+    </li>
+    <li>
+      <strong>Aggregated and Anonymized Data:</strong> May be retained
+      indefinitely for research, analytics, and platform improvement
+    </li>
+  </ul>
+
+  <p className="font-semibold">13.2 Deletion and Destruction</p>
+
+  <p>
+    Upon expiration of applicable retention periods, or upon receipt of a valid
+    deletion request, Personal Data is securely deleted or anonymized using
+    industry-standard methods, including:
+  </p>
+
+  <ul>
+    <li>Secure deletion of electronic records using data sanitization standards</li>
+    <li>Destruction of physical media containing Personal Data</li>
+    <li>
+      Removal of Personal Data from active systems, backups, and archives
+    </li>
+    <li>
+      Irreversible anonymization or aggregation rendering re-identification
+      impossible
+    </li>
+  </ul>
+</section>
+
+{/* 14. Security Measures and Incident Response */}
+<section className="space-y-4">
+  <h3 className="font-bold">
+    14. Security Measures and Incident Response
+  </h3>
+
+  <p>
+    SMRI implements comprehensive technical, organizational, administrative, and
+    physical security measures designed to protect Personal Data against
+    unauthorized access, use, disclosure, alteration, destruction, or loss.
+  </p>
+
+  <p className="font-semibold">14.1 Technical Security Controls</p>
+
+  <ul>
+    <li>
+      <strong>Encryption:</strong> Data encrypted in transit using TLS 1.2 or
+      higher and at rest using AES-256 or equivalent
+    </li>
+    <li>
+      <strong>Access Controls:</strong> Role-based access control (RBAC),
+      principle of least privilege, and multi-factor authentication (MFA) for
+      privileged accounts
+    </li>
+    <li>
+      <strong>Network Security:</strong> Firewalls, intrusion detection and
+      prevention systems (IDS/IPS), and network segmentation
+    </li>
+    <li>
+      <strong>Vulnerability Management:</strong> Regular security assessments,
+      penetration testing, vulnerability scanning, and patch management
+    </li>
+    <li>
+      <strong>Logging and Monitoring:</strong> Audit logging, SIEM, and anomaly
+      detection
+    </li>
+  </ul>
+
+  <p className="font-semibold">14.2 Organizational Security Controls</p>
+
+  <ul>
+    <li>
+      <strong>Security Policies and Procedures:</strong> Documented information
+      security policies, incident response plans, and business continuity
+      procedures
+    </li>
+    <li>
+      <strong>Personnel Security:</strong> Background checks, security training,
+      confidentiality agreements, and least-privilege access principles
+    </li>
+    <li>
+      <strong>Vendor Management:</strong> Security assessments, contractual
+      security requirements, and ongoing monitoring
+    </li>
+    <li>
+      <strong>Change Management:</strong> Controlled change processes, security
+      review of system changes, and testing procedures
+    </li>
+  </ul>
+
+  <p className="font-semibold">14.3 Data Breach Notification</p>
+
+  <p>In the event of a data breach involving Personal Data, SMRI will:</p>
+
+  <ul>
+    <li>Investigate and contain the incident promptly</li>
+    <li>Assess the scope, nature, and potential impact of the breach</li>
+    <li>
+      Notify affected Institutions without undue delay and in accordance with
+      contractual obligations
+    </li>
+    <li>
+      Notify regulatory authorities and data subjects as required by applicable
+      law
+    </li>
+    <li>
+      Provide reasonable assistance to Institutions in meeting notification
+      obligations
+    </li>
+    <li>Implement measures to mitigate harm and prevent recurrence</li>
+  </ul>
+</section>
     </div>
   );
 }

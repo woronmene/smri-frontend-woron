@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
         <nav className="flex-1 flex justify-between items-center bg-white px-8 min-h-20 lg:border-b lg:border-gray-200 lg:shadow">
           <Link href="/">
              <Image
-                src="/SMRI_logo.svg"
+                src="/smri_logo.svg"
                 alt="SMRI logo"
                 width={160}
                 height={50}
