@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 
-const USER_SERVICE_URL =
-  process.env.USER_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
-  (process.env.NODE_ENV === "development"
-    ? "http://127.0.0.1:8000"
-    : "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com");
+const USER_SERVICE_URL = process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+ "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
+
 
 export async function POST(req) {
   const { email, password, type } = await req.json();

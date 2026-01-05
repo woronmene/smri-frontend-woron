@@ -17,22 +17,18 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import {
   uploadMedia,
   getMediaItem,
   validateImage,
-  validateVideo,
+
 } from "@/lib/media-api";
 import {
   createCourse,
   getCourseById,
   updateCourse,
-  createModule,
-  updateModule,
-  createLesson,
-  updateLesson,
-  deleteLesson,
 } from "@/lib/cms-api";
 import CoursePublishedSuccess from "@/components/dashboard/CoursePublishedSuccess";
 import TipTapEditor from "@/components/dashboard/TipTapEditor";
@@ -63,6 +59,19 @@ export default function CreateCoursePage() {
   const [errorTitle, setErrorTitle] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [saveAction, setSaveAction] = useState(null);
+
+  // Modal State
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => setShowConfirmModal(false),
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    isDestructive: false,
+    singleButton: false, // For simple alerts
+  });
 
   const [courseData, setCourseData] = useState({
     title: "",
@@ -161,12 +170,21 @@ export default function CreateCoursePage() {
   };
 
   const deleteModule = (moduleId) => {
-    if (confirm("Are you sure you want to delete this module and all its lessons?")) {
-      setModules(modules.filter((m) => m.id !== moduleId));
-      if (selectedLesson?.moduleId === moduleId) {
-        setSelectedLesson(null);
-      }
-    }
+    setConfirmConfig({
+      title: "Delete Module?",
+      message: "Are you sure you want to delete this module and all its lessons?",
+      confirmText: "Yes, Delete",
+      isDestructive: true,
+      onConfirm: () => {
+        setModules((prev) => prev.filter((m) => m.id !== moduleId));
+        if (selectedLesson?.moduleId === moduleId) {
+          setSelectedLesson(null);
+        }
+        setShowConfirmModal(false);
+      },
+      onCancel: () => setShowConfirmModal(false),
+    });
+    setShowConfirmModal(true);
   };
 
   const toggleEditModule = (moduleId) => {
@@ -215,23 +233,31 @@ export default function CreateCoursePage() {
   };
 
   const deleteLessonHandler = (moduleId, lessonId) => {
-    if (confirm("Are you sure you want to delete this lesson?")) {
-      setModules(
-        modules.map((m) => {
-          if (m.id === moduleId) {
-            return {
-              ...m,
-              lessons: m.lessons.filter((l) => l.id !== lessonId),
-            };
-          }
-          return m;
-        })
-      );
-
-      if (selectedLesson?.lessonId === lessonId) {
-        setSelectedLesson(null);
-      }
-    }
+    setConfirmConfig({
+      title: "Delete Lesson?",
+      message: "Are you sure you want to delete this lesson? This action cannot be undone.",
+      confirmText: "Delete",
+      isDestructive: true,
+      onConfirm: () => {
+        setModules((prev) =>
+          prev.map((m) => {
+            if (m.id === moduleId) {
+              return {
+                ...m,
+                lessons: m.lessons.filter((l) => l.id !== lessonId),
+              };
+            }
+            return m;
+          })
+        );
+        if (selectedLesson?.lessonId === lessonId) {
+          setSelectedLesson(null);
+        }
+        setShowConfirmModal(false);
+      },
+      onCancel: () => setShowConfirmModal(false),
+    });
+    setShowConfirmModal(true);
   };
 
   const toggleEditLesson = (lessonId) => {
@@ -488,8 +514,18 @@ export default function CreateCoursePage() {
       if (!thumbnailFile && !courseData.thumbnailUrl) throw new Error("Please upload a course thumbnail to save as draft.");
 
       await saveCourseData("Draft");
-      alert("Course saved as draft!");
-      router.push("/dashboard");
+      setConfirmConfig({
+        title: "Draft Saved",
+        message: "Course saved as draft successfully!",
+        confirmText: "Okay",
+        singleButton: true,
+        type: "success",
+        onConfirm: () => {
+          setShowConfirmModal(false);
+          router.push("/dashboard");
+        },
+      });
+      setShowConfirmModal(true);
     } catch (err) {
       console.error(err);
       setErrorTitle("Save Failed");
@@ -679,6 +715,83 @@ export default function CreateCoursePage() {
           onClose={() => setShowErrorModal(false)}
         />
       )}
+
+      {showConfirmModal && (
+        <ConfirmationModal
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          onConfirm={confirmConfig.onConfirm}
+          onCancel={confirmConfig.onCancel}
+          confirmText={confirmConfig.confirmText}
+          cancelText={confirmConfig.cancelText}
+          isDestructive={confirmConfig.isDestructive}
+          singleButton={confirmConfig.singleButton}
+          type={confirmConfig.type}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmationModal({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  isDestructive = false,
+  singleButton = false,
+  type = "default", // 'default' | 'success'
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col items-center text-center">
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+              type === "success"
+                ? "bg-green-100 text-green-600"
+                : isDestructive
+                ? "bg-red-100 text-red-600"
+                : "bg-cyan-100 text-cyan-600"
+            }`}
+          >
+            {type === "success" ? (
+              <CheckCircle size={24} />
+            ) : (
+              <AlertCircle size={24} />
+            )}
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+            {message}
+          </p>
+          <div className="flex gap-3 w-full">
+            {!singleButton && (
+              <Button
+                onClick={onCancel}
+                variant="outline"
+                className="flex-1 rounded-xl py-3 border-gray-200"
+              >
+                {cancelText}
+              </Button>
+            )}
+            <Button
+              onClick={onConfirm}
+              className={`flex-1 rounded-xl py-3 text-white ${
+                type === "success"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : isDestructive
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-cyan-600 hover:bg-cyan-700"
+              }`}
+            >
+              {confirmText}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

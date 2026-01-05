@@ -23,7 +23,7 @@ export default function SettingsPage() {
     isOrgAdmin && !isSmriAdmin
   );
 
-  console.log(schoolData, "schoolData");
+
 
   const initialPersonalValues = useMemo(
     () => ({

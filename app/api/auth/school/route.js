@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const USER_SERVICE_URL =
-  process.env.USER_SERVICE_URL ||
+  "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com" ||
   process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
   (process.env.NODE_ENV === "development"
     ? "http://127.0.0.1:8000"
@@ -22,6 +22,7 @@ export async function GET(req) {
       },
     });
 
+    console.log(res.json(), "response from school fetch");
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
