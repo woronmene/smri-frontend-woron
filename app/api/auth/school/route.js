@@ -10,12 +10,27 @@ export async function GET(req) {
   }
 
   try {
-    const res = await fetch(`${USER_SERVICE_URL}/users/school`, {
+    let res = await fetch(`${USER_SERVICE_URL}/users/school`, {
       method: "GET",
       headers: {
         Authorization: authHeader,
       },
     });
+
+    // If /users/school fails (likely because the token belongs to a School entity, not a User entity),
+    // try the /schools endpoint which returns the current school profile.
+    if (!res.ok) {
+        const schoolsRes = await fetch(`${USER_SERVICE_URL}/schools`, {
+            method: "GET",
+            headers: {
+                Authorization: authHeader,
+            },
+        });
+        
+        if (schoolsRes.ok) {
+            res = schoolsRes;
+        }
+    }
 
     const data = await res.json().catch(() => ({}));
     console.log(data, "response from school fetch");

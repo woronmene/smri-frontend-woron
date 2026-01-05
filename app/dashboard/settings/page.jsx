@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
-import { updateUserProfile, getAvatarUploadUrl, setUserAvatar } from "@/lib/user-api";
+import { updateUserProfile, updateSchoolProfile, getAvatarUploadUrl, setUserAvatar } from "@/lib/user-api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useGetSchool, useChangePassword } from "@/hooks/auth-api";
 import { toast } from "sonner";
@@ -21,17 +21,22 @@ export default function SettingsPage() {
   const isSmriAdmin = (user?.role || "").toLowerCase() === "smri_admin";
 
   const { data: schoolData, isLoading: schoolLoading } = useGetSchool(
-    isOrgAdmin && !isSmriAdmin
+    isOrgAdmin || (user && !isSmriAdmin) // Fetch school if org admin OR regular user (student/teacher)
   );
 
-  const initialPersonalValues = useMemo(
-    () => ({
+  const initialPersonalValues = useMemo(() => {
+    if (isOrgAdmin) {
+      return {
+        schoolName: schoolData?.name || "",
+        email: schoolData?.email || user?.email || "",
+      };
+    }
+    return {
       firstName: user?.first_name || "",
       lastName: user?.last_name || "",
       email: user?.email || "",
-    }),
-    [user]
-  );
+    };
+  }, [user, schoolData, isOrgAdmin]);
 
   const [personalForm, setPersonalForm] = useState(initialPersonalValues);
 
@@ -55,6 +60,21 @@ export default function SettingsPage() {
     },
   });
 
+  const updateSchoolMutation = useMutation({
+    mutationFn: updateSchoolProfile,
+    onSuccess: () => {
+      toast.success("Organization Updated", {
+        description: "School details have been saved.",
+      });
+      queryClient.invalidateQueries(["my-school"]);
+    },
+    onError: (error) => {
+      toast.error("Update Failed", {
+        description: error.message || "Could not update school details.",
+      });
+    },
+  });
+
   const handlePersonalChange = (e) => {
     const { name, value } = e.target;
     setPersonalForm((prev) => ({ ...prev, [name]: value }));
@@ -62,10 +82,16 @@ export default function SettingsPage() {
 
   const handlePersonalSave = async (e) => {
     e.preventDefault();
-    updateProfileMutation.mutate({
-      first_name: personalForm.firstName,
-      last_name: personalForm.lastName,
-    });
+    if (isOrgAdmin) {
+      updateSchoolMutation.mutate({
+        name: personalForm.schoolName,
+      });
+    } else {
+      updateProfileMutation.mutate({
+        first_name: personalForm.firstName,
+        last_name: personalForm.lastName,
+      });
+    }
   };
 
   return (
@@ -86,7 +112,7 @@ export default function SettingsPage() {
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Personal Info
+            {isOrgAdmin ? "Organization Info" : "Personal Info"}
           </button>
           <button
             onClick={() => setActiveTab("password")}
@@ -107,7 +133,7 @@ export default function SettingsPage() {
             values={personalForm}
             onChange={handlePersonalChange}
             onSave={handlePersonalSave}
-            isLoading={updateProfileMutation.isPending}
+            isLoading={isOrgAdmin ? updateSchoolMutation.isPending : updateProfileMutation.isPending}
             user={user}
             isOrgAdmin={isOrgAdmin}
             isSmriAdmin={isSmriAdmin}
@@ -188,68 +214,85 @@ function PersonalInfoForm({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* User Photo */}
-      <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
-        <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
-          Your photo
-        </label>
-        <div className="flex-1 flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
-              {isUploading ? (
-                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-              ) : (user?.profileImage || user?.photoURL || user?.avatar || user?.avatar_cdn_url) ? (
-                <Image
-                  src={user.profileImage || user.photoURL || user.avatar || user.avatar_cdn_url}
-                  alt={user?.fullName || "User avatar"}
-                  fill
-                  className="object-cover"
+      {/* User Photo - Only for non-org admins */}
+      {!isOrgAdmin && (
+        <div className="flex flex-col md:flex-row md:items-center gap-6 pb-8 border-b border-gray-100">
+          <label className="w-full md:w-1/4 text-gray-500 font-medium text-sm">
+            Your photo
+          </label>
+          <div className="flex-1 flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                {isUploading ? (
+                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                ) : (user?.profileImage || user?.photoURL || user?.avatar || user?.avatar_cdn_url) ? (
+                  <Image
+                    src={user.profileImage || user.photoURL || user.avatar || user.avatar_cdn_url}
+                    alt={user?.fullName || "User avatar"}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-bold text-gray-500">
+                    {(user?.fullName || user?.email || "U")[0]?.toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              <label
+                htmlFor="profilePhoto"
+                className={`px-6 py-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 bg-white cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+              >
+                {isUploading ? 'Uploading...' : 'Choose'}
+                <input
+                  id="profilePhoto"
+                  type="file"
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handleFileChange}
+                  disabled={isUploading}
                 />
-              ) : (
-                <span className="text-lg font-bold text-gray-500">
-                  {(user?.fullName || user?.email || "U")[0]?.toUpperCase()}
-                </span>
-              )}
-            </div>
+              </label>
+              <span className="text-gray-400 text-sm">JPG or PNG. 2MB max</span>
+          </div>
+        </div>
+      )}
 
-            <label
-              htmlFor="profilePhoto"
-              className={`px-6 py-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 bg-white cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-            >
-              {isUploading ? 'Uploading...' : 'Choose'}
-              <input
-                id="profilePhoto"
-                type="file"
-                className="hidden"
-                accept="image/png, image/jpeg, image/webp, image/gif"
-                onChange={handleFileChange}
-                disabled={isUploading}
-              />
-            </label>
-            <span className="text-gray-400 text-sm">JPG or PNG. 2MB max</span>
+      {/* Fields */}
+      {isOrgAdmin ? (
+        <div className="pb-8 border-b border-gray-100">
+           <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Organization Name</label>
+            <Input
+              name="schoolName"
+              value={values.schoolName}
+              onChange={onChange}
+              className="rounded-xl border-gray-200 py-6"
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8 border-b border-gray-100">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">First Name</label>
+            <Input
+              name="firstName"
+              value={values.firstName}
+              onChange={onChange}
+              className="rounded-xl border-gray-200 py-6"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Last Name</label>
+            <Input
+              name="lastName"
+              value={values.lastName}
+              onChange={onChange}
+              className="rounded-xl border-gray-200 py-6"
+            />
+          </div>
+        </div>
+      )}
 
-      {/* Name Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8 border-b border-gray-100">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">First Name</label>
-          <Input
-            name="firstName"
-            value={values.firstName}
-            onChange={onChange}
-            className="rounded-xl border-gray-200 py-6"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Last Name</label>
-          <Input
-            name="lastName"
-            value={values.lastName}
-            onChange={onChange}
-            className="rounded-xl border-gray-200 py-6"
-          />
-        </div>
-      </div>
 
       {/* Email Readonly */}
       <div className="pb-8 border-b border-gray-100">
@@ -261,10 +304,10 @@ function PersonalInfoForm({
           />
       </div>
 
-       {/* School/Org Info */}
-        {!isSmriAdmin && (
+       {/* School/Org Info (ReadOnly context) - Only show if NOT Org Admin (since they edit it above) & NOT Smri Admin */}
+        {!isSmriAdmin && !isOrgAdmin && (
           <div className="pb-8 border-b border-gray-100">
-             <label className="block text-sm font-medium text-gray-700 mb-2">{isOrgAdmin ? "Organization" : "School"}</label>
+             <label className="block text-sm font-medium text-gray-700 mb-2">School</label>
              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 {schoolLoading ? (
                     <span className="text-sm text-gray-400 flex items-center gap-2">
@@ -273,16 +316,22 @@ function PersonalInfoForm({
                 ) : (
                     <div className="space-y-1">
                         <p className="font-medium text-gray-900">{schoolData?.name || "—"}</p>
-                        {isOrgAdmin && schoolData?.invite_code && (
-                             <p className="text-xs text-gray-500">
-                                Invite Code: <span className="font-mono font-bold text-cyan-600">{schoolData.invite_code}</span>
-                             </p>
-                        )}
                     </div>
                 )}
              </div>
           </div>
         )}
+        
+        {/* Invite Code for Org Admin */}
+         {isOrgAdmin && schoolData?.invite_code && (
+              <div className="pb-8 border-b border-gray-100">
+                 <label className="block text-sm font-medium text-gray-700 mb-2">Invite Code</label>
+                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                    <span className="font-mono font-bold text-cyan-600 text-lg tracking-widest">{schoolData.invite_code}</span>
+                    <span className="text-xs text-gray-400">Share this code with teachers</span>
+                 </div>
+              </div>
+         )}
 
       <div className="flex justify-end pt-4">
         <Button
