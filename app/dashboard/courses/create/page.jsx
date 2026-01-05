@@ -366,7 +366,6 @@ export default function CreateCoursePage() {
           <div data-smri-media-id="${mediaId}" data-smri-media-type="video" class="smri-media-pending p-6 border-2 border-dashed border-cyan-200 rounded-xl bg-cyan-50 my-6 text-center">
              <p class="font-bold text-cyan-800 text-lg mb-1">Video Processing...</p>
              <p class="text-sm text-cyan-600 mb-2">Your video is being optimized for streaming.</p>
-             <div class="text-xs text-gray-500 font-mono bg-white inline-block px-2 py-1 rounded border border-gray-200">ID: ${mediaId}</div>
           </div>`;
         break;
       case "audio":
