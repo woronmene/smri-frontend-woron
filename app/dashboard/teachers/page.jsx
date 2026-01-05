@@ -1,23 +1,13 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TeachersTable from "@/components/dashboard/teachers/TeachersTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
 import { AuthContext } from "@/context/AuthContext";
-import { getSchools } from "@/lib/user-api";
-
-// Mock Teachers Data (since endpoint is not ready)
-const MOCK_TEACHERS = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", role: "teacher", status: "Active" },
-  { id: 2, name: "Bob Smith", email: "bob@example.com", role: "teacher", status: "Active" },
-  { id: 3, name: "Charlie Davis", email: "charlie@example.com", role: "teacher", status: "Inactive" },
-  { id: 4, name: "Diana Evans", email: "diana@example.com", role: "teacher", status: "Active" },
-  { id: 5, name: "Evan Wright", email: "evan@example.com", role: "teacher", status: "Active" },
-  { id: 6, name: "Fiona White", email: "fiona@example.com", role: "teacher", status: "Active" },
-];
+import { getSchools, getSchoolTeachers } from "@/lib/user-api";
 
 export default function TeachersPage() {
   const { user, loading } = useContext(AuthContext);
@@ -36,6 +26,17 @@ export default function TeachersPage() {
     queryKey: ["admin-schools"],
     queryFn: () => getSchools(),
     enabled: isSmriAdmin && !selectedSchoolId, // Only fetch if admin and no school selected
+  });
+
+  // Fetch teachers for the target school (or all, for SMRI admin without school_id if backend allows)
+  const {
+    data: teachersData,
+    isLoading: teachersLoading,
+    error: teachersError,
+  } = useQuery({
+    queryKey: ["school-teachers", targetSchoolId],
+    queryFn: () => getSchoolTeachers(targetSchoolId),
+    enabled: (isSchoolAdmin || (isSmriAdmin && !!targetSchoolId)),
   });
 
   if (loading) {
@@ -101,8 +102,37 @@ export default function TeachersPage() {
 
   // ---------------- TEACHER LIST VIEW (School Admin OR Admin viewing School) ---------------- //
   if (isSchoolAdmin || (isSmriAdmin && selectedSchoolId)) {
-    // In future, useQuery(..., getSchoolTeachers(targetSchoolId)) here.
-    const teachers = MOCK_TEACHERS; 
+    if (teachersLoading) {
+      return (
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+        </div>
+      );
+    }
+
+    if (teachersError) {
+      return (
+        <div className="flex h-96 items-center justify-center text-red-500">
+          <p>Unable to load teachers. Please try again.</p>
+        </div>
+      );
+    }
+
+    const teachersRaw = teachersData?.items || [];
+
+    // Normalise teacher shape for the table
+    const teachers = useMemo(
+      () =>
+        teachersRaw.map((t) => ({
+          id: t.user_id,
+          name: `${t.first_name} ${t.last_name || ""}`.trim(),
+          email: t.email,
+          role: t.role || "teacher",
+          status: t.is_active ? "Active" : "Inactive",
+          avatar: t.avatar_cdn_url || null,
+        })),
+      [teachersRaw]
+    );
     
     // Calculate stats
     const totalTeachers = teachers.length;
