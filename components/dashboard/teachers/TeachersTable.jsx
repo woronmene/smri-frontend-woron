@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal, Shield } from 'lucide-react';
-import Image from 'next/image';
+import { useState, useRef, useEffect } from "react";
+import { MoreHorizontal, Shield } from "lucide-react";
+import Image from "next/image";
 
-const ActionMenu = ({ onMakeAdmin }) => {
+const ActionMenu = ({ onToggleRole, label }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -29,13 +29,13 @@ const ActionMenu = ({ onMakeAdmin }) => {
         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-10 py-1 animate-in fade-in zoom-in-95 duration-200">
           <button
             onClick={() => {
-              onMakeAdmin();
+              onToggleRole();
               setIsOpen(false);
             }}
             className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
           >
             <Shield className="h-4 w-4 text-cyan-600" />
-            Make School Admin
+            {label}
           </button>
         </div>
       )}
@@ -43,7 +43,7 @@ const ActionMenu = ({ onMakeAdmin }) => {
   );
 };
 
-const TeachersTable = ({ teachers, onMakeAdmin }) => {
+const TeachersTable = ({ teachers, onChangeRole }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
       <div className="overflow-x-auto min-h-[300px]">
@@ -98,7 +98,14 @@ const TeachersTable = ({ teachers, onMakeAdmin }) => {
                   </span>
                 </td>
                 <td className="py-4 px-6 border-l border-gray-100 text-right overflow-visible">
-                  <ActionMenu onMakeAdmin={() => onMakeAdmin && onMakeAdmin(teacher.id)} />
+                  <ActionMenu
+                    onToggleRole={() => onChangeRole && onChangeRole(teacher)}
+                    label={
+                      teacher.role === "school_admin"
+                        ? "Make Teacher"
+                        : "Make School Admin"
+                    }
+                  />
                 </td>
               </tr>
             ))}

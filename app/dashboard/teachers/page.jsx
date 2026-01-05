@@ -1,13 +1,13 @@
 "use client";
 
 import { useContext, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TeachersTable from "@/components/dashboard/teachers/TeachersTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
 import { AuthContext } from "@/context/AuthContext";
-import { getSchools, getSchoolTeachers } from "@/lib/user-api";
+import { getSchools, getSchoolTeachers, updateUserRole } from "@/lib/user-api";
 
 export default function TeachersPage() {
   const { user, loading } = useContext(AuthContext);
@@ -20,6 +20,15 @@ export default function TeachersPage() {
 
   // Calculate target view
   const targetSchoolId = isSmriAdmin ? selectedSchoolId : user?.school_id;
+
+  const queryClient = useQueryClient();
+
+  const roleMutation = useMutation({
+    mutationFn: ({ userId, role }) => updateUserRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["school-teachers"] });
+    },
+  });
 
   // Fetch schools for Admin
   const { data: schoolsData, isLoading: schoolsLoading } = useQuery({
@@ -140,9 +149,11 @@ export default function TeachersPage() {
         teacher.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleMakeAdmin = (teacherId) => {
-      // Placeholder for future API call
-      alert(`Request to make Teacher ID: ${teacherId} a School Admin`);
+    const handleChangeRole = (teacher) => {
+      const currentRole = (teacher.role || "").toLowerCase();
+      const nextRole =
+        currentRole === "school_admin" ? "teacher" : "school_admin";
+      roleMutation.mutate({ userId: teacher.id, role: nextRole });
     };
 
     return (
@@ -215,7 +226,7 @@ export default function TeachersPage() {
         {/* Table */}
         <TeachersTable
           teachers={filteredTeachers}
-          onMakeAdmin={handleMakeAdmin}
+          onChangeRole={handleChangeRole}
         />
       </div>
     );
