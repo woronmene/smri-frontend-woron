@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Social Media First Aid",
+  title: "Social Media Research Institute",
   description: "SMRI application",
 };
 
