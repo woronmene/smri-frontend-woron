@@ -211,7 +211,7 @@ export default function DashboardPage() {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           {/* Tabs - Segmented Control Style */}
-          <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 rounded-lg border border-gray-200 overflow-x-auto max-w-full">
+         {isSmriAdmin && <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 rounded-lg border border-gray-200 overflow-x-auto max-w-full">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                 {tab.label}
               </button>
             ))}
-          </div>
+          </div>}
 
           {/* Create Course Button - Only visible for admins */}
           {isSmriAdmin && (
