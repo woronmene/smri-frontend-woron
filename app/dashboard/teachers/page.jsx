@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import TeachersTable from "@/components/dashboard/teachers/TeachersTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
 import { AuthContext } from "@/context/AuthContext";
-import { getSchools, getSchoolTeachers, updateUserRole } from "@/lib/user-api";
+import { getSchools, getSchoolTeachers, getSchoolAdmins, updateUserRole } from "@/lib/user-api";
 
 export default function TeachersPage() {
   const { user, loading } = useContext(AuthContext);
@@ -27,6 +27,7 @@ export default function TeachersPage() {
     mutationFn: ({ userId, role }) => updateUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["school-teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["school-admins"] });
     },
   });
 
@@ -45,6 +46,17 @@ export default function TeachersPage() {
   } = useQuery({
     queryKey: ["school-teachers", targetSchoolId],
     queryFn: () => getSchoolTeachers(targetSchoolId),
+    enabled: isSchoolAdmin || (isSmriAdmin && !!targetSchoolId),
+  });
+
+  // Fetch school admins for the target school
+  const {
+    data: adminsData,
+    isLoading: adminsLoading,
+    error: adminsError,
+  } = useQuery({
+    queryKey: ["school-admins", targetSchoolId],
+    queryFn: () => getSchoolAdmins(targetSchoolId),
     enabled: isSchoolAdmin || (isSmriAdmin && !!targetSchoolId),
   });
 
@@ -111,7 +123,7 @@ export default function TeachersPage() {
 
   // ---------------- TEACHER LIST VIEW (School Admin OR Admin viewing School) ---------------- //
   if (isSchoolAdmin || (isSmriAdmin && selectedSchoolId)) {
-    if (teachersLoading) {
+    if (teachersLoading || adminsLoading) {
       return (
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
@@ -119,7 +131,7 @@ export default function TeachersPage() {
       );
     }
 
-    if (teachersError) {
+    if (teachersError || adminsError) {
       return (
         <div className="flex h-96 items-center justify-center text-red-500">
           <p>Unable to load teachers. Please try again.</p>
@@ -128,9 +140,15 @@ export default function TeachersPage() {
     }
 
     const teachersRaw = teachersData?.items || [];
+    const adminsRaw = adminsData?.items || [];
+    const allStaffRaw = [...adminsRaw, ...teachersRaw];
+
+    // Deduplicate just in case, though backend should handle it. Map by ID.
+    const uniqueStaff = Array.from(new Map(allStaffRaw.map(item => [item.user_id, item])).values());
+
 
     // Normalise teacher shape for the table (no hooks here to keep hook order stable)
-    const teachers = teachersRaw.map((t) => ({
+    const teachers = uniqueStaff.map((t) => ({
       id: t.user_id,
       name: `${t.first_name} ${t.last_name || ""}`.trim(),
       email: t.email,
