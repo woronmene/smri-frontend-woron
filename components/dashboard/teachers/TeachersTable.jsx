@@ -46,7 +46,7 @@ const ActionMenu = ({ onToggleRole, label }) => {
 const TeachersTable = ({ teachers, onChangeRole }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
-      <div className="overflow-x-auto min-h-[300px]">
+      <div className="overflow-x-auto ">
         <table className="w-full">
           <thead>
             <tr className="bg-white border-b border-gray-100 text-left">

@@ -124,8 +124,14 @@ const Sidebar = ({ className, onNavigate }) => {
              </div>
              <div className="flex-1 min-w-0">
                <h3 className="font-semibold text-sm text-gray-900 truncate">{user?.name || user?.fullName || user?.displayName || 'User'}</h3>
-               <p className="text-xs text-gray-500 truncate capitalize">
-                 {user?.role === 'admin' ? 'Administrator Account' : (user?.role || 'Student Account')}
+               <p className="text-xs text-gray-500 truncate">
+                 {(() => {
+                   const r = user?.role;
+                   if (r === 'admin') return 'Administrator Account';
+                   if (r === 'smri_admin') return 'SMRI Admin';
+                   if (r === 'school_admin') return 'School Admin';
+                   return (r || 'Student Account').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                 })()}
                </p>
              </div>
           </div>
