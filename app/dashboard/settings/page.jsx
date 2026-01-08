@@ -2,14 +2,14 @@
 
 import { useContext, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
 import { updateUserProfile, updateSchoolProfile, getAvatarUploadUrl, setUserAvatar } from "@/lib/user-api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useGetSchool, useChangePassword } from "@/hooks/auth-api";
+import { useGetSchool, useChangePassword, useSchoolChangePassword } from "@/hooks/auth-api";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -142,7 +142,7 @@ export default function SettingsPage() {
             schoolLoading={schoolLoading}
           />
         ) : (
-          <PasswordForm />
+          <PasswordForm isOrgAdmin={isOrgAdmin} />
         )}
       </div>
     </div>
@@ -348,7 +348,7 @@ function PersonalInfoForm({
   );
 }
 
-function PasswordForm() {
+function PasswordForm({ isOrgAdmin }) {
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -356,6 +356,9 @@ function PasswordForm() {
   });
 
   const changePasswordMutation = useChangePassword();
+  const schoolChangePasswordMutation = useSchoolChangePassword();
+
+  const mutation = isOrgAdmin ? schoolChangePasswordMutation : changePasswordMutation;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -373,7 +376,7 @@ function PasswordForm() {
        return;
     }
 
-    changePasswordMutation.mutate(
+    mutation.mutate(
       {
         current_password: form.currentPassword,
         new_password: form.newPassword,
@@ -394,52 +397,66 @@ function PasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-md animate-in fade-in duration-500">
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Current Password</label>
-        <Input
-          type="password"
+        <PasswordInput
           name="currentPassword"
           value={form.currentPassword}
           onChange={handleChange}
           required
-          className="rounded-xl border-gray-200 py-6"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">New Password</label>
-        <Input
-          type="password"
+        <PasswordInput
           name="newPassword"
           value={form.newPassword}
           onChange={handleChange}
           required
-          className="rounded-xl border-gray-200 py-6"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Confirm Password</label>
-        <Input
-          type="password"
+        <PasswordInput
           name="confirmPassword"
           value={form.confirmPassword}
           onChange={handleChange}
           required
-          className="rounded-xl border-gray-200 py-6"
         />
       </div>
 
       <div className="pt-4">
         <Button
           type="submit"
-          disabled={changePasswordMutation.isPending}
+          disabled={mutation.isPending}
           className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-full px-8 py-6 w-full sm:w-auto"
         >
-          {changePasswordMutation.isPending && (
+          {mutation.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           Update Password
         </Button>
       </div>
     </form>
+  );
+}
+
+function PasswordInput({ className, ...props }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        {...props}
+        type={show ? "text" : "password"}
+        className={`rounded-xl border-gray-200 py-6 pr-10 ${className || ""}`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+      >
+        {show ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+    </div>
   );
 }

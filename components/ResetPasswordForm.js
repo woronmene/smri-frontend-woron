@@ -38,11 +38,20 @@ import { toast } from "sonner";
 
 // ... (schema remains)
 
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+const accountRoleData = [
+  { key: "Individual", value: "individual" },
+  { key: "Organization", value: "organization" },
+];
+
 export default function ResetPasswordForm({ email, token }) {
   const router = useRouter();
   const reset = useResetPassword();
   
-  const [resetType, setResetType] = useState("individual");
+  const [accountRole, setAccountRole] = useState("individual");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -60,7 +69,7 @@ export default function ResetPasswordForm({ email, token }) {
         email,
         token,
         new_password: data.password,
-        type: resetType,
+        type: accountRole,
       });
       
       toast.success("Password reset successful", {
@@ -91,30 +100,40 @@ export default function ResetPasswordForm({ email, token }) {
 
   return (
     <div className="w-full">
-      {/* Account Type Toggle */}
-      <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6">
-        <button
-          type="button"
-          onClick={() => setResetType("individual")}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-            resetType === "individual"
-              ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          }`}
-        >
-          Individual
-        </button>
-        <button
-          type="button"
-          onClick={() => setResetType("organization")}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-            resetType === "organization"
-              ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          }`}
-        >
-          Organization
-        </button>
+      {/* Account Type Toggle (Consistent with SignIn/SignUp) */}
+      <div className="flex flex-col items-start gap-2 mb-6">
+          <Label className="text-sm font-medium">Account Role</Label>
+          <ToggleGroup
+            type="single"
+            value={accountRole}
+            onValueChange={(val) => val && setAccountRole(val)}
+            className="flex gap-3 justify-between items-center w-full"
+          >
+            {accountRoleData.map((item) => (
+              <ToggleGroupItem
+                key={item.value}
+                value={item.value}
+                className={cn(
+                  "px-4 sm:px-10 min-h-12 border-2 rounded-[12px] font-medium flex-1",
+                  accountRole === item.value &&
+                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25"
+                )}
+              >
+                <Image
+                  src={
+                    accountRole === item.value
+                      ? "/account_role_selected.svg"
+                      : "/account_role_unselected.svg"
+                  }
+                  alt="role_icon"
+                  width={15}
+                  height={15}
+                  className="h-auto w-auto mr-2"
+                />
+                {item.key}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
       </div>
 
       <Form {...form}>

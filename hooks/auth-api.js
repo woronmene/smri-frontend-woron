@@ -99,6 +99,16 @@ export function useChangePassword() {
   });
 }
 
+export function useSchoolChangePassword() {
+  return useMutation({
+    mutationFn: (payload) =>
+      apiFetch("/api/auth/school/password-change", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  });
+}
+
 /* -------------------- PROFILE QUERY -------------------- */
 
 export function useGetProfile(enabled = true) {
