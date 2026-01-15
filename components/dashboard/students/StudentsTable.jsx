@@ -65,7 +65,7 @@ const StudentsTable = ({ students }) => {
       </div>
       {students.length === 0 && (
         <div className="p-12 text-center text-gray-500 text-sm">
-          No students found matching your criteria.
+          No students found.
         </div>
       )}
     </div>

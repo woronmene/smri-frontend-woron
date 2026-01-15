@@ -65,6 +65,12 @@ const Sidebar = ({ className, onNavigate }) => {
         show: false,
     },
     {
+      name: 'Organizations',
+      href: '/dashboard/organizations',
+      icon: '/window 2.svg',
+      show: user?.role === 'smri_admin',
+    },
+    {
       name: 'Settings',
       href: '/dashboard/settings',
       icon: '/settings_sidemenu_icon.svg',
