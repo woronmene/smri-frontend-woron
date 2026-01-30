@@ -2,7 +2,14 @@
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Search, Filter, ChevronDown, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Download,
+  Search,
+  Filter,
+  ChevronDown,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StudentsTable from "@/components/dashboard/students/StudentsTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
@@ -10,7 +17,6 @@ import { AuthContext } from "@/context/AuthContext";
 import { getAllCourses, getCourseById } from "@/lib/cms-api";
 import { getSchools, getSchoolStudents } from "@/lib/user-api";
 import {
-  getCourseStudents,
   getCourseStudentsProgress,
   getSchoolCourseStudentsProgress,
 } from "@/lib/analytics-api";
@@ -25,11 +31,17 @@ export default function StudentsPage() {
   // School Admin is treated as "Teacher" level for this view (sees only their school)
   const isSchoolAdmin = user?.role === "school_admin";
   // If user is a teacher OR school_admin OR has teacher in email
-  const isTeacher = user?.role === "teacher" || isSchoolAdmin || user?.email?.toLowerCase().includes("teacher");
-  
+  const isTeacher =
+    user?.role === "teacher" ||
+    isSchoolAdmin ||
+    user?.email?.toLowerCase().includes("teacher");
+
   // "isAdmin" in this context controls the Schools List view (SMRI Admin only)
   // We exclude School Admin from this to force them into the single-school view
-  const isAdmin = isSmriAdmin || user?.role === "admin" || user?.email?.toLowerCase().includes("admin");
+  const isAdmin =
+    isSmriAdmin ||
+    user?.role === "admin" ||
+    user?.email?.toLowerCase().includes("admin");
 
   // Role used when calling CMS API for courses
   const userRole = isAdmin ? "admin" : "teacher";
@@ -57,7 +69,7 @@ export default function StudentsPage() {
 
   const selectedCourse = useMemo(
     () => courses?.find((c) => c.id === selectedCourseId) || null,
-    [courses, selectedCourseId]
+    [courses, selectedCourseId],
   );
 
   // Detailed course
@@ -104,7 +116,8 @@ export default function StudentsPage() {
 
   const currentSchoolName = useMemo(() => {
     if (isAdmin && selectedSchoolId && schoolsData?.items) {
-      return schoolsData.items.find((s) => s.school_id === selectedSchoolId)?.name;
+      return schoolsData.items.find((s) => s.school_id === selectedSchoolId)
+        ?.name;
     }
     return user?.school_name || "School Students";
   }, [isAdmin, selectedSchoolId, schoolsData, user]);
@@ -113,7 +126,7 @@ export default function StudentsPage() {
   // and availability for export
   const filteredStudents = useMemo(() => {
     if (!courses || courses.length === 0) return [];
-    
+
     // Determine effective course/modules/lessons
     const effectiveCourse = courseDetail || selectedCourse;
     if (!effectiveCourse) return [];
@@ -122,21 +135,21 @@ export default function StudentsPage() {
     const lessonCount =
       effectiveCourse?.modules?.reduce(
         (sum, m) => sum + (m.lessons?.length || 0),
-        0
+        0,
       ) || 0;
 
     // Merge student list with analytics
     const allStudents = studentsData?.items || [];
     const analyticsMap = new Map(
-      (analyticsProgress?.students || []).map((s) => [s.user_id, s])
+      (analyticsProgress?.students || []).map((s) => [s.user_id, s]),
     );
 
     const studentsForCourse = allStudents.map((s) => {
       const progressRecord = analyticsMap.get(s.user_id);
-      
+
       const totalLessons = lessonCount || 0;
       const completedCount = progressRecord?.completed_count || 0;
-      
+
       const rawProgress =
         totalLessons > 0
           ? Math.round((completedCount / totalLessons) * 100)
@@ -155,50 +168,67 @@ export default function StudentsPage() {
         lastActive: progressRecord?.last_completed_at
           ? new Date(progressRecord.last_completed_at).toLocaleString()
           : "Not started",
-        status: completed ? "Completed" : progressRecord ? "In progress" : "Not started",
+        status: completed
+          ? "Completed"
+          : progressRecord
+            ? "In progress"
+            : "Not started",
         moduleCount, // Passing these through if needed for display later, though currently redundant in the table object
-        lessonCount
+        lessonCount,
       };
     });
 
     return studentsForCourse.filter(
       (student) =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.course.toLowerCase().includes(searchQuery.toLowerCase())
+        student.course.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [
-    courses, 
-    courseDetail, 
-    selectedCourse, 
-    studentsData, 
-    analyticsProgress, 
-    searchQuery
+    courses,
+    courseDetail,
+    selectedCourse,
+    studentsData,
+    analyticsProgress,
+    searchQuery,
   ]);
 
   const handleExport = () => {
     if (!filteredStudents || filteredStudents.length === 0) return;
 
-    const headers = ["First Name", "Last Name", "Email", "Course", "Progress", "Last Active", "Status"];
-    const csvContent = "\uFEFF" + [
-      headers.join(","),
-      ...filteredStudents.map((student) =>
-        [
-          `"${student.firstName}"`,
-          `"${student.lastName}"`,
-          `"${student.email}"`,
-          `"${student.course}"`,
-          `${student.progress}%`,
-          `"${student.lastActive}"`,
-          `"${student.status}"`,
-        ].join(",")
-      ),
-    ].join("\n");
+    const headers = [
+      "First Name",
+      "Last Name",
+      "Email",
+      "Course",
+      "Progress",
+      "Last Active",
+      "Status",
+    ];
+    const csvContent =
+      "\uFEFF" +
+      [
+        headers.join(","),
+        ...filteredStudents.map((student) =>
+          [
+            `"${student.firstName}"`,
+            `"${student.lastName}"`,
+            `"${student.email}"`,
+            `"${student.course}"`,
+            `${student.progress}%`,
+            `"${student.lastActive}"`,
+            `"${student.status}"`,
+          ].join(","),
+        ),
+      ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `students_export_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `students_export_${new Date().toISOString().split("T")[0]}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -224,7 +254,7 @@ export default function StudentsPage() {
 
     const schools = schoolsData?.items || [];
     const filteredSchools = schools.filter((school) =>
-      school.name.toLowerCase().includes(searchQuery.toLowerCase())
+      school.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     return (
@@ -269,9 +299,9 @@ export default function StudentsPage() {
             However, user wants "SchoolList" component used.
             I will pass onSelectSchool={setSelectedSchoolId} and ensure SchoolList uses it.
         */}
-        <SchoolList 
-          schools={filteredSchools} 
-          onSelectSchool={(school) => setSelectedSchoolId(school.school_id)} 
+        <SchoolList
+          schools={filteredSchools}
+          onSelectSchool={(school) => setSelectedSchoolId(school.school_id)}
         />
       </div>
     );
@@ -308,12 +338,8 @@ export default function StudentsPage() {
     const lessonCount =
       effectiveCourse?.modules?.reduce(
         (sum, m) => sum + (m.lessons?.length || 0),
-        0
+        0,
       ) || 0;
-
-
-
-
 
     return (
       <div className="space-y-6 font-sans pb-12">
@@ -321,14 +347,14 @@ export default function StudentsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {isAdmin && (
-               <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setSelectedSchoolId(null)}
                 className="mr-2"
-               >
-                 <ArrowLeft size={24} />
-               </Button>
+              >
+                <ArrowLeft size={24} />
+              </Button>
             )}
             <h1 className="text-3xl font-bold text-gray-900">
               {isAdmin ? "School Students" : "Students"}
@@ -343,7 +369,7 @@ export default function StudentsPage() {
               {currentSchoolName}
               <ChevronDown size={16} className="ml-2 text-gray-400" />
             </Button> */}
-            <Button 
+            <Button
               onClick={handleExport}
               className="bg-[#3AD0E3] hover:bg-cyan-400 cursor-pointer text-black flex items-center gap-2 rounded-[100px] px-5 py-3 shadow-sm shadow-cyan-500/20 border-none h-auto font-medium"
             >
@@ -382,12 +408,16 @@ export default function StudentsPage() {
                 {effectiveCourse.title}
               </h3>
               <div className="text-sm text-gray-600">
-                <p className={`${!showFullDescription ? "line-clamp-1" : ""} break-words`}>
+                <p
+                  className={`${!showFullDescription ? "line-clamp-1" : ""} break-words`}
+                >
                   {effectiveCourse.fullDescription ||
                     effectiveCourse.description ||
                     "No description provided yet."}
                 </p>
-                {(effectiveCourse.fullDescription || effectiveCourse.description)?.length > 100 && (
+                {(
+                  effectiveCourse.fullDescription || effectiveCourse.description
+                )?.length > 100 && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
                     className="text-[#3AD0E3] hover:text-cyan-600 font-medium text-xs mt-1 focus:outline-none"

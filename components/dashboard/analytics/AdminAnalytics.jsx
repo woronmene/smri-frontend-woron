@@ -1,83 +1,226 @@
-import { Users, School, GraduationCap, TrendingUp, Activity } from 'lucide-react';
+"use client";
+
+import { useMemo } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import {
+  GraduationCap,
+  Users,
+  UserCheck,
+  BookOpen,
+  BookMarked,
+  Building2,
+} from "lucide-react";
+
+import { getAllCourses } from "@/lib/cms-api";
+import { fetchAllSchools, fetchAllStudents } from "@/lib/user-api";
+import { getCourseStudentsProgress } from "@/lib/analytics-api";
+import { isActiveWithinPastDays } from "@/lib/utils";
 
 const AdminAnalytics = () => {
-  const stats = [
-    { label: 'Total Schools', value: '42', icon: School, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Total Students', value: '3,842', icon: Users, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-    { label: 'Active Courses', value: '156', icon: GraduationCap, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Avg. Completion', value: '78%', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
-  ];
+  const {
+    data: courses,
+    isLoading: coursesLoading,
+    error: coursesError,
+  } = useQuery({
+    queryKey: ["admin-analytics-courses"],
+    queryFn: () => getAllCourses("admin"),
+  });
+
+  const {
+    data: schoolsData,
+    isLoading: schoolsLoading,
+    error: schoolsError,
+  } = useQuery({
+    queryKey: ["admin-analytics-schools"],
+    queryFn: () => fetchAllSchools(),
+  });
+
+  const {
+    data: studentsData,
+    isLoading: studentsLoading,
+    error: studentsError,
+  } = useQuery({
+    queryKey: ["admin-analytics-students"],
+    queryFn: () => fetchAllStudents(),
+  });
+
+  const courseIds = useMemo(() => (courses || []).map((c) => c.id), [courses]);
+
+  const progressQueries = useQueries({
+    queries: courseIds.map((courseId) => ({
+      queryKey: ["admin-analytics-progress", courseId],
+      queryFn: () => getCourseStudentsProgress(courseId),
+      enabled: !!courseId,
+    })),
+  });
+
+  const progressLoading = progressQueries.some((q) => q.isLoading);
+  const progressError = progressQueries.some((q) => q.isError);
+
+  const aggregatedByStudent = useMemo(() => {
+    const map = new Map();
+    for (const q of progressQueries) {
+      const data = q.data;
+      if (!data?.students) continue;
+      for (const s of data.students) {
+        const uid = s.user_id;
+        if (!uid) continue;
+        const cur = map.get(uid) ?? {
+          totalCompleted: 0,
+          lastCompletedAt: null,
+        };
+        cur.totalCompleted += s.completed_count ?? 0;
+        const at = s.last_completed_at ?? null;
+        if (at) {
+          if (
+            !cur.lastCompletedAt ||
+            new Date(at) > new Date(cur.lastCompletedAt)
+          ) {
+            cur.lastCompletedAt = at;
+          }
+        }
+        map.set(uid, cur);
+      }
+    }
+    return map;
+  }, [progressQueries]);
+
+  const metrics = useMemo(() => {
+    const numCourses = courseIds.length;
+    const numOrgs = schoolsData?.items?.length ?? 0;
+    const totalStudents = studentsData?.items?.length ?? 0;
+    const students = studentsData?.items ?? [];
+
+    const active = students.filter((s) =>
+      isActiveWithinPastDays(s.last_login_at, 7),
+    ).length;
+
+    const sumCompletions = students.reduce((acc, s) => {
+      const agg = aggregatedByStudent.get(s.user_id);
+      return acc + (agg?.totalCompleted ?? 0);
+    }, 0);
+    const avgCompletions =
+      totalStudents > 0
+        ? Math.round((sumCompletions / totalStudents) * 10) / 10
+        : 0;
+
+    return {
+      numCourses,
+      numOrgs,
+      totalStudents,
+      activeStudents: active,
+      avgCompletions,
+    };
+  }, [
+    courseIds.length,
+    schoolsData?.items,
+    studentsData?.items,
+    aggregatedByStudent,
+  ]);
+
+  const loading =
+    coursesLoading || schoolsLoading || studentsLoading || progressLoading;
+  const error = coursesError || schoolsError || studentsError;
+  const progressFailed = progressError;
+
+  if (
+    loading &&
+    metrics.numCourses === 0 &&
+    metrics.numOrgs === 0 &&
+    metrics.totalStudents === 0
+  ) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <GraduationCap className="h-7 w-7 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-100 bg-white py-12 text-center">
+        <p className="text-red-500">
+          Error loading analytics. Please try again.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">System Overview</h2>
-        <p className="text-gray-500">Global statistics across all organizations.</p>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-gray-900">System overview</h2>
+        <p className="text-sm text-gray-500">
+          Platform-wide analytics across all organizations, courses, and
+          students.
+        </p>
+        {progressFailed && (
+          <p className="text-sm text-amber-600">
+            Progress data could not be loaded. Average completions may show as
+            0.
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
-                <stat.icon size={24} />
-              </div>
-              <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                <TrendingUp size={12} className="mr-1" /> +12%
-              </span>
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900">{stat.value}</h3>
-            <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-lg bg-slate-50 p-2.5 text-slate-600">
+            <BookMarked size={20} />
           </div>
-        ))}
-      </div>
-
-      {/* Placeholder for broader insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <Activity size={20} className="text-cyan-500" />
-            Platform Activity
-          </h3>
-          <div className="h-64 flex items-end justify-between gap-2 px-4">
-            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((height, i) => (
-              <div key={i} className="w-full bg-gray-100 rounded-t-lg relative group overflow-hidden">
-                <div 
-                  className="absolute bottom-0 left-0 w-full bg-cyan-500/80 group-hover:bg-cyan-500 transition-colors rounded-t-lg"
-                  style={{ height: `${height}%` }}
-                ></div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-xs text-gray-400">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-            <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
-          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900">
+            {metrics.numCourses}
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-gray-500">
+            Total courses
+          </p>
         </div>
-
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Performing Schools</h3>
-            <div className="space-y-6">
-                {[
-                    { name: 'Greenfield High', progress: 92, students: 450 },
-                    { name: 'Tech Future Inst.', progress: 88, students: 320 },
-                    { name: 'Oakwood Secondary', progress: 85, students: 280 },
-                    { name: 'River Valley', progress: 79, students: 190 },
-                ].map((school, i) => (
-                    <div key={i}>
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="font-medium text-gray-900">{school.name}</span>
-                            <span className="text-gray-500">{school.progress}% Completion</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                                className="bg-blue-600 h-2 rounded-full" 
-                                style={{ width: `${school.progress}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-600">
+            <Building2 size={20} />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900">
+            {metrics.numOrgs}
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-gray-500">
+            Organizations
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-lg bg-cyan-50 p-2.5 text-cyan-600">
+            <Users size={20} />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900">
+            {metrics.totalStudents}
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-gray-500">
+            Total students
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600">
+            <UserCheck size={20} />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900">
+            {metrics.activeStudents}
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-gray-500">
+            Active students (this week)
+          </p>
+          <p className="mt-1 text-xs text-gray-400">Activity in past 7 days</p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-lg bg-violet-50 p-2.5 text-violet-600">
+            <BookOpen size={20} />
+          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900">
+            {metrics.avgCompletions}
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-gray-500">
+            Average completions
+          </p>
+          <p className="mt-1 text-xs text-gray-400">
+            Avg. lessons completed per student
+          </p>
         </div>
       </div>
     </div>
