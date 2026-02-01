@@ -210,7 +210,7 @@ const TeacherAnalytics = () => {
             Class engagement rate
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Students active in past 7 days ÷ total students
+            Students active in past 7 days
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
