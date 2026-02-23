@@ -29,7 +29,6 @@ import { toast } from "sonner";
 const accountRoleData = [
   { key: "Student", value: "student" },
   { key: "Teacher", value: "teacher" },
-  { key: "Organization", value: "organization" },
 ];
 
 const signupSchema = z
@@ -115,8 +114,8 @@ export default function SignUpForm() {
         });
         router.push(
           `/auth/verify-email?email=${encodeURIComponent(
-            data.email
-          )}&type=${encodeURIComponent(data.accountRole)}`
+            data.email,
+          )}&type=${encodeURIComponent(data.accountRole)}`,
         );
       },
       onError: (err) => {
@@ -127,7 +126,7 @@ export default function SignUpForm() {
       },
       onSettled: () => {
         setLoading(false);
-      }
+      },
     });
   };
 
@@ -143,7 +142,7 @@ export default function SignUpForm() {
             type="single"
             value={form.getValues("accountRole")}
             onValueChange={(val) => val && form.setValue("accountRole", val)}
-            className="flex gap-3 justify-between items-center w-full"
+            className="flex gap-3 justify-start items-center w-full"
           >
             {accountRoleData.map((item) => (
               <ToggleGroupItem
@@ -152,7 +151,7 @@ export default function SignUpForm() {
                 className={cn(
                   "px-10 min-h-12 border-2 rounded-[12px] font-medium",
                   form.getValues("accountRole") === item.value &&
-                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25"
+                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25",
                 )}
               >
                 <Image
@@ -340,7 +339,7 @@ export default function SignUpForm() {
             type="single"
             value={form.getValues("accountRole")}
             onValueChange={(val) => val && form.setValue("accountRole", val)}
-            className="flex gap-3 justify-between items-center w-full"
+            className="flex gap-3 justify-start items-center w-full"
           >
             {[accountRoleData[0], accountRoleData[1]].map((item) => (
               <ToggleGroupItem
@@ -349,7 +348,7 @@ export default function SignUpForm() {
                 className={cn(
                   "px-10 min-h-12 border-2 rounded-[12px] font-medium",
                   form.getValues("accountRole") === item.value &&
-                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25"
+                    "data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:hover:bg-primary/25",
                 )}
               >
                 <Image
@@ -383,23 +382,23 @@ export default function SignUpForm() {
                     className="border-primary ring-primary rounded"
                   />
                 </FormControl>
-                <FormLabel  className="text-gray-600 text-left flex-1 flex flex-wrap text-sm leading-tight">
+                <FormLabel className="text-gray-600 text-left flex-1 flex flex-wrap text-sm leading-tight">
                   <p>
-
-                  By creating an account, I agree that I have read and accepted the{" "}
-                  <span
-                  onClick={()=> router.push("/terms-of-service")}
-                    className="text-[#0A0A0A] font-medium underline mx-1 hover:text-cyan-600 transition-colors"
-                  >
-                    Terms of Service
-                  </span>
-                  and
-                  <span
-                    onClick={()=> router.push("/privacy-policy")}
-                    className="text-[#0A0A0A] font-medium underline ml-1 hover:text-cyan-600 transition-colors"
-                  >
-                    Privacy Policy
-                  </span>
+                    By creating an account, I agree that I have read and
+                    accepted the{" "}
+                    <span
+                      onClick={() => router.push("/terms-of-service")}
+                      className="text-[#0A0A0A] font-medium underline mx-1 hover:text-cyan-600 transition-colors"
+                    >
+                      Terms of Service
+                    </span>
+                    and
+                    <span
+                      onClick={() => router.push("/privacy-policy")}
+                      className="text-[#0A0A0A] font-medium underline ml-1 hover:text-cyan-600 transition-colors"
+                    >
+                      Privacy Policy
+                    </span>
                   </p>
                   .
                 </FormLabel>
