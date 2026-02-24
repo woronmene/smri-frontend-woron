@@ -1,10 +1,10 @@
 import { Providers } from "./providers";
-import './globals.css';
+import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Social Media Research Institute",
+  title: "Social Media Research Institute Ltd.",
   description: "SMRI application",
 };
 

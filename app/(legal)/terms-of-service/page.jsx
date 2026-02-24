@@ -16,15 +16,18 @@ export default function TermsOfServicePage() {
       {/* Intro */}
       <section className="space-y-4">
         <p>
-          These Terms of Service (<strong>“Terms”</strong>) govern access to and use of the
-          Social Media Research Institute LLC Learning Management System, including all
-          applications, websites, curriculum, training materials, software, analytics tools,
-          certifications, and related services (collectively, the <strong>“Platform”</strong>).
+          These Terms of Service (<strong>“Terms”</strong>) govern access to and
+          use of the Social Media Research Institute Ltd. Learning Management
+          System, including all applications, websites, curriculum, training
+          materials, software, analytics tools, certifications, and related
+          services (collectively, the <strong>“Platform”</strong>).
         </p>
 
         <p>
-          The Platform is operated by <strong>Social Media Research Institute LLC</strong>
-          (<strong>“SMRI,” “Provider,” “we,” “us,” or “our”</strong>).
+          The Platform is operated by{" "}
+          <strong>Social Media Research Institute Ltd.</strong>, a Delaware
+          corporation (<strong>“SMRI,” “Provider,” “we,” “us,” or “our”</strong>
+          ).
         </p>
       </section>
 
@@ -34,29 +37,36 @@ export default function TermsOfServicePage() {
         <p>
           SMRI provides community health education addressing mental health,
           behavioral health, and supportive services. Social Media First Aid is
-          <strong> not an offer of clinical care, diagnosis, or crisis intervention</strong>.
+          <strong>
+            {" "}
+            not an offer of clinical care, diagnosis, or crisis intervention
+          </strong>
+          .
         </p>
         <p>
-          The Platform is for informational purposes only and does not substitute
-          professional help. Participation does not create a therapist-client or
-          provider relationship.
+          The Platform is for informational purposes only and does not
+          substitute professional help. Participation does not create a
+          therapist-client or provider relationship.
         </p>
         <p className="font-semibold">
-          If you are in crisis, contact emergency services or a healthcare provider immediately.
+          If you are in crisis, contact emergency services or a healthcare
+          provider immediately.
         </p>
       </section>
 
       {/* 2 */}
       <section className="space-y-4">
-        <h3 className="font-bold">2. Introduction; Acceptance; Binding Effect</h3>
+        <h3 className="font-bold">
+          2. Introduction; Acceptance; Binding Effect
+        </h3>
         <p>
-          By accessing or using the Platform, you (<strong>“User”</strong>) acknowledge
-          that you have read, understood, and agree to be bound by these Terms and
-          the SMRI Privacy Policy.
+          By accessing or using the Platform, you (<strong>“User”</strong>)
+          acknowledge that you have read, understood, and agree to be bound by
+          these Terms and the SMRI Privacy Policy.
         </p>
         <p>
-          If you act on behalf of an institution (<strong>“Institution”</strong>), you
-          represent that you have authority to bind that Institution.
+          If you act on behalf of an institution (<strong>“Institution”</strong>
+          ), you represent that you have authority to bind that Institution.
         </p>
         <p className="font-semibold">
           If you do not agree, you may not access or use the Platform.
@@ -65,11 +75,14 @@ export default function TermsOfServicePage() {
 
       {/* 3 */}
       <section className="space-y-4">
-        <h3 className="font-bold">3. Purpose and Educational Nature of the Platform</h3>
+        <h3 className="font-bold">
+          3. Purpose and Educational Nature of the Platform
+        </h3>
         <p>
-          The Platform is intended solely for educational, preventative, instructional,
-          and research-informed purposes related to digital literacy, social media
-          awareness, online behavior, and technology wellbeing.
+          The Platform is intended solely for educational, preventative,
+          instructional, and research-informed purposes related to digital
+          literacy, social media awareness, online behavior, and technology
+          wellbeing.
         </p>
         <ul>
           <li>No medical or mental health services</li>
@@ -81,16 +94,28 @@ export default function TermsOfServicePage() {
 
       {/* 4 */}
       <section className="space-y-4">
-        <h3 className="font-bold">4. User Categories; Role-Based Access Controls</h3>
+        <h3 className="font-bold">
+          4. User Categories; Role-Based Access Controls
+        </h3>
         <p>
-          Access is governed by <strong>role-based access controls (RBAC)</strong>
+          Access is governed by{" "}
+          <strong>role-based access controls (RBAC)</strong>
           determined by the Institution.
         </p>
         <ul>
-          <li><strong>Students:</strong> Access assigned educational content only</li>
-          <li><strong>Teachers:</strong> Assign content and view progress</li>
-          <li><strong>Administrators:</strong> Manage accounts and analytics</li>
-          <li><strong>Trainers:</strong> Access certification and training materials</li>
+          <li>
+            <strong>Students:</strong> Access assigned educational content only
+          </li>
+          <li>
+            <strong>Teachers:</strong> Assign content and view progress
+          </li>
+          <li>
+            <strong>Administrators:</strong> Manage accounts and analytics
+          </li>
+          <li>
+            <strong>Trainers:</strong> Access certification and training
+            materials
+          </li>
         </ul>
       </section>
 
@@ -98,14 +123,17 @@ export default function TermsOfServicePage() {
       <section className="space-y-4">
         <h3 className="font-bold">5. Eligibility; Age-Based Access; Minors</h3>
         <p>
-          Children under <strong>thirteen (13)</strong> may not independently create accounts.
-          Institutions must obtain required parental or guardian consent.
+          Children under <strong>thirteen (13)</strong> may not independently
+          create accounts. Institutions must obtain required parental or
+          guardian consent.
         </p>
       </section>
 
       {/* 6 */}
       <section className="space-y-4">
-        <h3 className="font-bold">6. Account Registration; Authentication; Security</h3>
+        <h3 className="font-bold">
+          6. Account Registration; Authentication; Security
+        </h3>
         <p>
           Accounts use institution-approved authentication. Users must protect
           credentials and may not share access.
@@ -125,10 +153,13 @@ export default function TermsOfServicePage() {
 
       {/* 8 */}
       <section className="space-y-4">
-        <h3 className="font-bold">8. Curriculum; Training Materials; Intellectual Property</h3>
+        <h3 className="font-bold">
+          8. Curriculum; Training Materials; Intellectual Property
+        </h3>
         <p>
-          All Platform materials are the exclusive intellectual property of SMRI or
-          its licensors. Use is limited to internal educational purposes only.
+          All Platform materials are the exclusive intellectual property of SMRI
+          or its licensors. Use is limited to internal educational purposes
+          only.
         </p>
       </section>
 
@@ -202,17 +233,23 @@ export default function TermsOfServicePage() {
 
       {/* 17 */}
       <section className="space-y-4">
-        <h3 className="font-bold">17. Acceptable Use Policy – Detailed Provisions</h3>
+        <h3 className="font-bold">
+          17. Acceptable Use Policy – Detailed Provisions
+        </h3>
         <p>
-          Users must not engage in security violations, impersonation, or content abuse.
+          Users must not engage in security violations, impersonation, or
+          content abuse.
         </p>
       </section>
 
       {/* 18 */}
       <section className="space-y-4">
-        <h3 className="font-bold">18. Intellectual Property Rights – Comprehensive Framework</h3>
+        <h3 className="font-bold">
+          18. Intellectual Property Rights – Comprehensive Framework
+        </h3>
         <p>
-          All SMRI intellectual property is protected under U.S. and international law.
+          All SMRI intellectual property is protected under U.S. and
+          international law.
         </p>
       </section>
 
@@ -220,8 +257,8 @@ export default function TermsOfServicePage() {
       <section className="space-y-4">
         <h3 className="font-bold">19. Indemnification</h3>
         <p>
-          Users agree to indemnify and hold SMRI harmless from claims arising from use
-          of the Platform.
+          Users agree to indemnify and hold SMRI harmless from claims arising
+          from use of the Platform.
         </p>
       </section>
 
@@ -229,7 +266,8 @@ export default function TermsOfServicePage() {
       <section className="space-y-4">
         <h3 className="font-bold">20. Amendments and Modifications</h3>
         <p>
-          Material changes will be communicated at least thirty (30) days in advance.
+          Material changes will be communicated at least thirty (30) days in
+          advance.
         </p>
       </section>
 
@@ -237,7 +275,8 @@ export default function TermsOfServicePage() {
       <section className="space-y-4">
         <h3 className="font-bold">21. Entire Agreement</h3>
         <p>
-          These Terms constitute the entire agreement between SMRI and the Institution.
+          These Terms constitute the entire agreement between SMRI and the
+          Institution.
         </p>
       </section>
 
@@ -245,23 +284,25 @@ export default function TermsOfServicePage() {
       <section className="space-y-4">
         <h3 className="font-bold">22. Severability</h3>
         <p>
-          Invalid provisions shall be modified or severed without affecting remaining Terms.
+          Invalid provisions shall be modified or severed without affecting
+          remaining Terms.
         </p>
       </section>
 
       {/* 23 */}
       <section className="space-y-4">
         <h3 className="font-bold">23. Waiver</h3>
-        <p>
-          Failure to enforce any provision does not constitute a waiver.
-        </p>
+        <p>Failure to enforce any provision does not constitute a waiver.</p>
       </section>
 
       {/* Contact */}
       <section className="space-y-4">
         <h3 className="font-bold">Contact</h3>
         <p>
-          <strong>Social Media Research Institute LLC</strong><br />
+          <strong>Social Media Research Institute Ltd.</strong>
+          <br />
+          16192 Coastal Highway, Lewes DE 19958, United States.
+          <br />
           Email: <a href="mailto:legal@smri.world">legal@smri.world</a>
         </p>
       </section>
