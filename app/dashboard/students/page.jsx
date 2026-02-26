@@ -15,7 +15,11 @@ import StudentsTable from "@/components/dashboard/students/StudentsTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
 import { AuthContext } from "@/context/AuthContext";
 import { getAllCourses, getCourseById } from "@/lib/cms-api";
-import { getSchools, getSchoolStudents } from "@/lib/user-api";
+import {
+  getSchools,
+  getSchoolStudents,
+  fetchAllStudents,
+} from "@/lib/user-api";
 import {
   getCourseStudentsProgress,
   getSchoolCourseStudentsProgress,
@@ -91,6 +95,13 @@ export default function StudentsPage() {
     queryKey: ["admin-schools"],
     queryFn: () => getSchools(),
     enabled: isAdmin && !selectedSchoolId, // Only fetch list if not viewing a specific school
+  });
+
+  // Fetch all students for SMRI admin to compute accurate per-school counts
+  const { data: allStudentsData, isLoading: allStudentsLoading } = useQuery({
+    queryKey: ["admin-students-all"],
+    queryFn: () => fetchAllStudents(),
+    enabled: isAdmin && !selectedSchoolId,
   });
 
   // Fetch authoritative list of students for the target school
@@ -244,7 +255,7 @@ export default function StudentsPage() {
 
   // --------------- ADMIN VIEW: SCHOOL LIST ---------------- //
   if (isAdmin && !selectedSchoolId) {
-    if (schoolsLoading) {
+    if (schoolsLoading || allStudentsLoading) {
       return (
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
@@ -253,7 +264,21 @@ export default function StudentsPage() {
     }
 
     const schools = schoolsData?.items || [];
-    const filteredSchools = schools.filter((school) =>
+    const allStudents = allStudentsData?.items || [];
+
+    const studentCountsBySchool = new Map();
+    allStudents.forEach((student) => {
+      const sid = student.school_id;
+      if (!sid) return;
+      studentCountsBySchool.set(sid, (studentCountsBySchool.get(sid) || 0) + 1);
+    });
+
+    const schoolsWithCounts = schools.map((school) => ({
+      ...school,
+      studentCount: studentCountsBySchool.get(school.school_id) ?? 0,
+    }));
+
+    const filteredSchools = schoolsWithCounts.filter((school) =>
       school.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
@@ -263,11 +288,9 @@ export default function StudentsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Schools Listings
+              Student Listings
             </h1>
-            <p className="text-gray-500 mt-1">
-              Select a school to view its students.
-            </p>
+            <p className="text-gray-500 mt-1">Select a school to view its</p>
           </div>
         </div>
 

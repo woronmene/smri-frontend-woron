@@ -1,5 +1,5 @@
-import { School, Users, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { School, Users, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const SchoolList = ({ schools, onSelectSchool }) => {
   return (
@@ -7,8 +7,12 @@ const SchoolList = ({ schools, onSelectSchool }) => {
       {schools.map((school) => {
         // Handle backend vs mock field names
         const id = school.school_id || school.id;
-        const studentCount = school.student_size || school.studentCount || 0;
-        
+        const studentCount =
+          school.studentCount ??
+          school.student_size ??
+          school.studentCount ??
+          0;
+
         const Content = (
           <>
             <div className="flex items-start justify-between mb-4">
@@ -16,23 +20,28 @@ const SchoolList = ({ schools, onSelectSchool }) => {
                 <School size={24} />
               </div>
             </div>
-            
+
             <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors">
               {school.name}
             </h3>
-            
+
             <div className="flex items-center justify-between pt-4">
               <div className="flex items-center gap-2 text-gray-600">
-                <span className="text-sm font-medium">{studentCount} Students</span>
+                <span className="text-sm font-medium">
+                  {studentCount} Students
+                </span>
               </div>
-              <ArrowRight size={18} className="text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all" />
+              <ArrowRight
+                size={18}
+                className="text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all"
+              />
             </div>
           </>
         );
 
         if (onSelectSchool) {
           return (
-            <div 
+            <div
               key={id}
               onClick={() => onSelectSchool(school)}
               className="group bg-white p-6 rounded-xl border border-gray-200 hover:border-cyan-500 hover:shadow-md transition-all duration-200 block cursor-pointer"
@@ -43,8 +52,8 @@ const SchoolList = ({ schools, onSelectSchool }) => {
         }
 
         return (
-          <Link 
-            key={id} 
+          <Link
+            key={id}
             href={`/dashboard/students/${id}`}
             className="group bg-white p-6 rounded-xl border border-gray-200 hover:border-cyan-500 hover:shadow-md transition-all duration-200 block"
           >

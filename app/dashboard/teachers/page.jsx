@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import TeachersTable from "@/components/dashboard/teachers/TeachersTable";
 import SchoolList from "@/components/dashboard/students/SchoolList";
 import { AuthContext } from "@/context/AuthContext";
-import { getSchools, getSchoolTeachers, getSchoolAdmins, updateUserRole } from "@/lib/user-api";
+import {
+  getSchools,
+  getSchoolTeachers,
+  getSchoolAdmins,
+  updateUserRole,
+  fetchAllStudents,
+} from "@/lib/user-api";
 
 export default function TeachersPage() {
   const { user, loading } = useContext(AuthContext);
@@ -36,6 +42,13 @@ export default function TeachersPage() {
     queryKey: ["admin-schools"],
     queryFn: () => getSchools(),
     enabled: isSmriAdmin && !selectedSchoolId, // Only fetch if admin and no school selected
+  });
+
+  // Fetch all students for SMRI admin to compute accurate per-school counts
+  const { data: allStudentsData, isLoading: allStudentsLoading } = useQuery({
+    queryKey: ["admin-students-all"],
+    queryFn: () => fetchAllStudents(),
+    enabled: isSmriAdmin && !selectedSchoolId,
   });
 
   // Fetch teachers for the target school (or all, for SMRI admin without school_id if backend allows)
@@ -70,7 +83,7 @@ export default function TeachersPage() {
 
   // ---------------- ADMIN VIEW: SCHOOL LIST ---------------- //
   if (isSmriAdmin && !selectedSchoolId) {
-    if (schoolsLoading) {
+    if (schoolsLoading || allStudentsLoading) {
       return (
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
@@ -79,8 +92,22 @@ export default function TeachersPage() {
     }
 
     const schools = schoolsData?.items || [];
-    const filteredSchools = schools.filter((school) =>
-      school.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const allStudents = allStudentsData?.items || [];
+
+    const studentCountsBySchool = new Map();
+    allStudents.forEach((student) => {
+      const sid = student.school_id;
+      if (!sid) return;
+      studentCountsBySchool.set(sid, (studentCountsBySchool.get(sid) || 0) + 1);
+    });
+
+    const schoolsWithCounts = schools.map((school) => ({
+      ...school,
+      studentCount: studentCountsBySchool.get(school.school_id) ?? 0,
+    }));
+
+    const filteredSchools = schoolsWithCounts.filter((school) =>
+      school.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     return (
@@ -89,7 +116,7 @@ export default function TeachersPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Schools Listings
+              Teacher Listings
             </h1>
             <p className="text-gray-500 mt-1">
               Select a school to view its teachers.
@@ -144,8 +171,9 @@ export default function TeachersPage() {
     const allStaffRaw = [...adminsRaw, ...teachersRaw];
 
     // Deduplicate just in case, though backend should handle it. Map by ID.
-    const uniqueStaff = Array.from(new Map(allStaffRaw.map(item => [item.user_id, item])).values());
-
+    const uniqueStaff = Array.from(
+      new Map(allStaffRaw.map((item) => [item.user_id, item])).values(),
+    );
 
     // Normalise teacher shape for the table (no hooks here to keep hook order stable)
     const teachers = uniqueStaff.map((t) => ({
@@ -164,7 +192,7 @@ export default function TeachersPage() {
     const filteredTeachers = teachers.filter(
       (teacher) =>
         teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        teacher.email.toLowerCase().includes(searchQuery.toLowerCase())
+        teacher.email.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     const handleChangeRole = (teacher) => {
