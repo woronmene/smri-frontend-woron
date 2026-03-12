@@ -74,7 +74,7 @@ export default function SchoolStudentsPage() {
 
   const selectedCourse = useMemo(
     () => courses?.find((c) => c.id === selectedCourseId) || null,
-    [courses, selectedCourseId]
+    [courses, selectedCourseId],
   );
 
   // Detailed course with modules/lessons
@@ -101,12 +101,6 @@ export default function SchoolStudentsPage() {
 
   useEffect(() => {
     if (analyticsProgress) {
-      console.log(
-        "Admin school analytics for course:",
-        schoolId,
-        selectedCourseId,
-        analyticsProgress
-      );
     }
   }, [analyticsProgress, schoolId, selectedCourseId]);
 
@@ -139,7 +133,7 @@ export default function SchoolStudentsPage() {
   const lessonCount =
     effectiveCourse?.modules?.reduce(
       (sum, m) => sum + (m.lessons?.length || 0),
-      0
+      0,
     ) || 0;
 
   const analyticsStudents = analyticsProgress?.students || [];
@@ -169,7 +163,7 @@ export default function SchoolStudentsPage() {
   const filteredStudents = studentsForCourse.filter(
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.course.toLowerCase().includes(searchQuery.toLowerCase())
+      student.course.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleExport = () => {
@@ -177,7 +171,7 @@ export default function SchoolStudentsPage() {
     const csvContent = [
       headers.join(","),
       ...filteredStudents.map(
-        (s) => `"${s.name}",${s.progress},"${s.lastActive}"`
+        (s) => `"${s.name}",${s.progress},"${s.lastActive}"`,
       ),
     ].join("\n");
 
@@ -302,4 +296,3 @@ export default function SchoolStudentsPage() {
     </div>
   );
 }
-

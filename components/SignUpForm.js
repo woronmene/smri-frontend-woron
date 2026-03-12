@@ -130,8 +130,6 @@ export default function SignUpForm() {
     });
   };
 
-  console.log(register.data);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full flex-1">

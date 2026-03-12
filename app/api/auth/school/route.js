@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-const USER_SERVICE_URL = "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
+const USER_SERVICE_URL =
+  "https://0qdrpi2zhe.execute-api.us-east-1.amazonaws.com";
 
 export async function GET(req) {
   const authHeader = req.headers.get("authorization");
@@ -20,20 +21,19 @@ export async function GET(req) {
     // If /users/school fails (likely because the token belongs to a School entity, not a User entity),
     // try the /schools endpoint which returns the current school profile.
     if (!res.ok) {
-        const schoolsRes = await fetch(`${USER_SERVICE_URL}/schools`, {
-            method: "GET",
-            headers: {
-                Authorization: authHeader,
-            },
-        });
-        
-        if (schoolsRes.ok) {
-            res = schoolsRes;
-        }
+      const schoolsRes = await fetch(`${USER_SERVICE_URL}/schools`, {
+        method: "GET",
+        headers: {
+          Authorization: authHeader,
+        },
+      });
+
+      if (schoolsRes.ok) {
+        res = schoolsRes;
+      }
     }
 
     const data = await res.json().catch(() => ({}));
-    console.log(data, "response from school fetch");
 
     if (!res.ok) {
       return NextResponse.json(
@@ -43,7 +43,7 @@ export async function GET(req) {
             data.message ||
             "Could not load organization settings",
         },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
@@ -52,9 +52,7 @@ export async function GET(req) {
     console.error("Error calling user service /schools:", err);
     return NextResponse.json(
       { message: "Unable to reach user service" },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
-
-

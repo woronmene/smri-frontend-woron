@@ -21,11 +21,9 @@ async function apiFetch(url, options = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || "Something went wrong");
-  console.log(data, "data");
 
   return data;
 }
-
 
 /* -------------------- AUTH MUTATIONS -------------------- */
 
@@ -121,7 +119,6 @@ export function useGetProfile(enabled = true) {
 }
 
 export function useGetSchool(enabled = true) {
-  console.log("called the map function")
   return useQuery({
     queryKey: ["school"],
     queryFn: () => apiFetch("/api/auth/school"),
@@ -129,5 +126,3 @@ export function useGetSchool(enabled = true) {
     retry: 1,
   });
 }
-
-

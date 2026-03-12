@@ -64,17 +64,17 @@ export default function VerifyEmailForm() {
     const email = form.getValues("email");
 
     if (!email || loading || resendTimer > 0) return;
-    
-    // We don't block UI with full page loading state for resend usually, 
+
+    // We don't block UI with full page loading state for resend usually,
     // but preventing double click is good.
     try {
-        const type = query.get("type") || "student";
-        await resend.mutateAsync({ email, type });
-        toast.success("Code resent successfully");
-        setResendTimer(60);
+      const type = query.get("type") || "student";
+      await resend.mutateAsync({ email, type });
+      toast.success("Code resent successfully");
+      setResendTimer(60);
     } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to resend code");
+      console.error(err);
+      setError(err.message || "Failed to resend code");
     }
   };
 
@@ -100,9 +100,6 @@ export default function VerifyEmailForm() {
       await onSubmit(form.getValues());
     }
   };
-
-
-  console.log(verify.data);
 
   return (
     <Form {...form}>
@@ -173,7 +170,9 @@ export default function VerifyEmailForm() {
           {resendTimer > 0 ? (
             <>
               Resend code in{" "}
-              <span className="text-[#20646D] font-medium">{resendTimer}s</span>{" "}
+              <span className="text-[#20646D] font-medium">
+                {resendTimer}s
+              </span>{" "}
             </>
           ) : (
             "Resend code"
