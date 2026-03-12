@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { getSchools } from "@/lib/user-api";
+import { resendSchoolInvite } from "@/lib/admin-api";
 import { toast } from "sonner";
 import Image from "next/image";
 
@@ -29,6 +30,7 @@ export default function OrganizationsPage() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [resendingId, setResendingId] = useState(null);
 
   useEffect(() => {
     fetchSchools();
@@ -44,6 +46,20 @@ export default function OrganizationsPage() {
       toast.error("Failed to load organizations");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendInvite = async (school) => {
+    if (!school?.school_id) return;
+    try {
+      setResendingId(school.school_id);
+      await resendSchoolInvite(school.school_id);
+      toast.success(`Invite resent to ${school.email}`);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Failed to resend invite");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -107,7 +123,7 @@ export default function OrganizationsPage() {
                   <TableHead>Contact Email</TableHead>
                   <TableHead>Verified</TableHead>
                   <TableHead>Joined Date</TableHead>
-                  {/* <TableHead className="text-right">Actions</TableHead> */}
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -140,12 +156,21 @@ export default function OrganizationsPage() {
                         ? new Date(school.created_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
-                    {/* <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <span className="sr-only">Open menu</span>
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </TableCell> */}
+                    <TableCell className="text-right">
+                      {!school.is_verified && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-cyan-600 text-cyan-700 hover:bg-cyan-50"
+                          onClick={() => handleResendInvite(school)}
+                          disabled={resendingId === school.school_id}
+                        >
+                          {resendingId === school.school_id
+                            ? "Resending..."
+                            : "Resend invite"}
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
