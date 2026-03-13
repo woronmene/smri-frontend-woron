@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { getSchools } from "@/lib/user-api";
-import { resendSchoolInvite } from "@/lib/admin-api";
 import { toast } from "sonner";
 import Image from "next/image";
 
@@ -50,11 +49,41 @@ export default function OrganizationsPage() {
   };
 
   const handleResendInvite = async (school) => {
-    if (!school?.school_id) return;
+    if (!school?.email || !school?.name) return;
     try {
       setResendingId(school.school_id);
-      await resendSchoolInvite(school.school_id);
-      toast.success(`Invite resent to ${school.email}`);
+      const authToken =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("auth_token")
+          : null;
+
+      const headers = { "Content-Type": "application/json" };
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          first_name: school.name,
+          last_name: "",
+          email: school.email,
+          type: "organization",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data.message || data.detail || "Failed to resend invite",
+        );
+      }
+
+      toast.success(
+        `Invite resent to ${school.email || "organization contact email"}`,
+      );
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Failed to resend invite");
